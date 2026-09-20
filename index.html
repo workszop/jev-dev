@@ -363,7 +363,7 @@ body[data-phase="decided"] .response { display:block; }
       <button type="button" class="text-action" id="whyModel" data-open-panel="explanation" data-t="whyModel" disabled>Dlaczego ten model?</button>
     </section>
   </div>
-  <div class="canvas-foot"><span id="routeSummary" data-t="flowHint">Prompt → polityka → ocena sygnałów → wybór modelu</span><span data-t="selectionOnly">Wybór modelu jest demonstracją. Prompt nie trafia do modelu docelowego.</span></div>
+  <div class="canvas-foot"><span id="routeSummary" data-t="flowHint">Prompt → polityka → ocena sygnałów → wybór modelu</span></div>
 </main>
 
 <dialog id="sideSheet" aria-labelledby="sheetTitle">
@@ -514,7 +514,7 @@ const T = {
     policyPriority: 'Blokada lokalna ma pierwszeństwo przed głosami.', oneRequest: 'jedno żądanie', waitingScores: 'Wyniki pojawią się po routowaniu.', scoresReady: 'Ocena sygnałów zakończona.',
     inspectRequest: 'Zobacz żądanie', yesProbability: 'Prawdopodobieństwo TAK', signalScore: 'Wynik sygnału', modelSelection: 'Wybór modelu',
     localNote: 'Dane zostają w firmie', frontierNote: 'Zewnętrzny model', selectedModel: 'Wybrany', whyModel: 'Dlaczego ten model?', decisionExplanation: 'Uzasadnienie decyzji',
-    waitingDecision: 'Routuj prompt, aby zobaczyć uzasadnienie.', flowHint: 'Prompt → polityka → ocena sygnałów → wybór modelu', selectionOnly: 'Wybór modelu jest demonstracją. Prompt nie trafia do modelu docelowego.',
+    waitingDecision: 'Routuj prompt, aby zobaczyć uzasadnienie.', flowHint: 'Prompt → polityka → ocena sygnałów → wybór modelu',
     verificationTitle: 'Kontrola interfejsu', keyboardHelp: 'Ctrl + Enter: routuj. 1–6: przykłady. Escape: zamknij panel.',
     check_onePrompt: 'Jeden zintegrowany prompt', check_stageOrder: 'Kolejność czterech etapów', check_signalSync: 'Spójne listy sygnałów i wyników', check_sideSheet: 'Natywny panel boczny', check_modelSelection: 'Wybór dokładnie jednego modelu po decyzji', check_geometry: 'Etapy mieszczą się na planszy', check_noOverflow: 'Brak przewijania poziomego',
     appTitle: 'Jev Router', settings: 'Ustawienia', promptTitle: 'Prompt użytkownika', promptPlaceholder: 'Wpisz prompt, który trafiłby do asystenta AI, albo zostaw puste i kliknij przycisk ze strzałką →, aby wylosować przykład...',
@@ -543,7 +543,7 @@ const T = {
     policyPriority: 'Local locks take priority over votes.', oneRequest: 'one request', waitingScores: 'Route a prompt to see the scores.', scoresReady: 'Signal evaluation complete.',
     inspectRequest: 'Inspect request', yesProbability: 'YES probability', signalScore: 'Signal score', modelSelection: 'Model selection',
     localNote: 'Data stays in-house', frontierNote: 'External model', selectedModel: 'Selected', whyModel: 'Why this model?', decisionExplanation: 'Decision explanation',
-    waitingDecision: 'Route a prompt to see its explanation.', flowHint: 'Prompt → policy → signal evaluation → model selection', selectionOnly: 'Model selection is a demonstration. No prompt is sent to the selected model.',
+    waitingDecision: 'Route a prompt to see its explanation.', flowHint: 'Prompt → policy → signal evaluation → model selection',
     verificationTitle: 'Interface checks', keyboardHelp: 'Ctrl + Enter: route. 1–6: examples. Escape: close sheet.',
     check_onePrompt: 'One integrated prompt', check_stageOrder: 'Four stages in order', check_signalSync: 'Matching policy and score signals', check_sideSheet: 'Native side sheet', check_modelSelection: 'Exactly one selected model after a decision', check_geometry: 'Stages fit the canvas', check_noOverflow: 'No horizontal overflow',
     appTitle: 'Jev Router', settings: 'Settings', promptTitle: 'User prompt', promptPlaceholder: 'Type a prompt that would go to an AI assistant, or leave it empty and press the arrow button → to draw a random example...',
