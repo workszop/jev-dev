@@ -144,6 +144,7 @@ input[type="range"] { width: 100%; accent-color: var(--yellow); }
   --editor-muted:#C6C1B9; --wire-idle:var(--line-2); --wire-active:var(--ink);
   --glass-line:rgba(255,255,255,.23); --glass-track:rgba(255,255,255,.2);
   --glass-muted:rgba(255,255,255,.82); --sheet-backdrop:rgba(28,25,23,.24);
+  --model-local:#087F43; --model-frontier:var(--blue-600); --sheet-width:320px; --sheet-title:18px;
 }
 [hidden] { display:none!important; }
 html,body { height:auto; min-height:100%; }
@@ -153,7 +154,8 @@ body { text-align:var(--stage-align); }
 .edu-logo { width:46px; height:46px; }
 #btnTools { border-radius:var(--r-sm); }
 main { flex:1; padding:var(--canvas-pad); }
-.router { position:relative; display:grid; grid-template-columns:minmax(260px,1.12fr) minmax(210px,.95fr) minmax(240px,1.08fr) minmax(185px,.8fr); gap:var(--flow-gap); min-height:clamp(570px,calc(100svh - 175px),900px); align-items:stretch; }
+.router { position:relative; display:grid; grid-template-columns:minmax(260px,1.12fr) minmax(210px,.95fr) minmax(240px,1.08fr) minmax(185px,.8fr); gap:var(--flow-gap); min-height:clamp(570px,calc(100svh - 175px),900px); align-items:center; }
+.prompt-stage { align-self:stretch; }
 .flow-stage { position:relative; z-index:1; display:flex; flex-direction:column; min-width:0; padding:25px; border-radius:var(--r-lg); }
 .stage-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:40px; }
 .stage-heading h2 { font-size:var(--stage-title); line-height:1.15; color:inherit; }
@@ -164,9 +166,9 @@ main { flex:1; padding:var(--canvas-pad); }
 .text-action { background:transparent; border:0; padding:0; color:inherit; font-size:var(--stage-caption); text-align:var(--stage-align); text-decoration:underline; text-underline-offset:4px; cursor:pointer; }
 .text-action:disabled { opacity:.5; cursor:default; text-decoration:none; }
 .prompt-stage,.policy-stage { color:var(--paper); background:var(--ink); }
-.prompt-stage textarea { flex:1; width:100%; min-height:270px; padding:0; margin:24px 0; border:0; border-radius:0; background:transparent; color:var(--paper); resize:none; font:inherit; font-size:var(--body); line-height:1.75; }
-.prompt-stage textarea::placeholder { color:var(--editor-muted); opacity:1; }
-.prompt-stage textarea:focus-visible { outline:1px solid var(--yellow); outline-offset:9px; box-shadow:none; border-radius:var(--r-xs); }
+.prompt-stage textarea { flex:1; width:100%; min-height:270px; padding:16px; margin:24px 0; border:0; border-radius:var(--r-sm); background:var(--paper); color:var(--ink); resize:none; font:inherit; font-size:var(--body); line-height:1.75; }
+.prompt-stage textarea::placeholder { color:var(--ink-2); opacity:1; }
+.prompt-stage textarea:focus-visible { outline:2px solid var(--yellow); outline-offset:4px; box-shadow:none; }
 .route-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .route-row .primary { box-shadow:none; margin-right:auto; }
 .shortcut { white-space:nowrap; }
@@ -194,12 +196,14 @@ body[data-phase="asking"] .progress { opacity:1; }
 .selection-stage { padding:0; gap:18px; color:var(--ink); }
 .selection-stage .stage-heading { padding:0 4px; }
 .model-targets { display:grid; grid-template-rows:1fr 1fr; gap:18px; flex:1; }
-.model-card { background:var(--paper-2); border:1px solid var(--line-2); border-radius:var(--r-lg); padding:24px; display:flex; flex-direction:column; justify-content:center; min-width:0; min-height:180px; }
-.model-card h3 { font-size:var(--stage-title); line-height:1.2; margin:9px 0 12px; overflow-wrap:anywhere; }
+.model-card { color:var(--paper); border:1px solid transparent; border-radius:var(--r-lg); padding:24px; display:flex; flex-direction:column; justify-content:center; min-width:0; min-height:180px; }
+#nLocal { background:var(--model-local); }
+#nFrontier { background:var(--model-frontier); }
+.model-card .overline { color:inherit; }
+.model-card h3 { color:inherit; font-size:var(--stage-title); line-height:1.2; margin:9px 0 12px; overflow-wrap:anywhere; }
 .model-name { font-size:var(--stage-caption); overflow-wrap:anywhere; }
-.model-note { font-size:var(--stage-caption); margin-top:22px; color:var(--ink-2); }
-.model-card[data-selected="true"] { background:var(--yellow); border-color:var(--yellow); }
-.model-card.is-off { opacity:.5; }
+.model-note { font-size:var(--stage-caption); margin-top:22px; color:inherit; }
+.model-card[data-selected="true"] { outline:3px solid var(--ink); outline-offset:4px; }
 .selection-mark { font-size:var(--stage-caption); font-weight:600; margin-top:12px; }
 .selection-mark::before { content:'✓ '; }
 .selection-stage .text-action { min-height:28px; }
@@ -246,6 +250,23 @@ body[data-phase="decided"] .response { display:block; }
   .flow-stage { padding:20px; } .selection-stage { padding:0; } .model-card { padding:20px; }
   .score-heading { font-size:var(--body-sm); } .score-heading output { font-size:var(--overline); }
 }
+@media(min-width:1280px) {
+  body[data-sheet="open"] main { margin-right:calc(var(--sheet-width) + 16px); }
+  body[data-sheet="open"] .router { grid-template-columns:minmax(190px,1.12fr) minmax(165px,.95fr) minmax(190px,1.08fr) minmax(155px,.8fr); gap:24px; --stage-title:22px; }
+  body[data-sheet="open"] .flow-stage { padding:20px; }
+  body[data-sheet="open"] .selection-stage { padding:0; }
+  body[data-sheet="open"] .model-card { padding:18px; }
+  body[data-sheet="open"] .score-heading { font-size:var(--body-sm); }
+  #sideSheet { inset:82px 16px 16px auto; width:var(--sheet-width); height:calc(100dvh - 98px); padding:16px; border:1px solid var(--line); box-shadow:none; }
+  .sheet-heading { position:sticky; top:-16px; z-index:2; padding:12px 0; background:var(--surface); gap:10px; margin-bottom:16px; }
+  .sheet-heading h2 { font-size:var(--sheet-title); }
+  .sheet-items > details > summary { padding:12px; font-size:var(--body-sm); }
+  .card { padding:4px 12px 14px; }
+  .presets { grid-template-columns:1fr; }
+  .signal-head { flex-wrap:wrap; }
+  .signal-name { flex-basis:100%; }
+  .sheet-settings { flex-wrap:wrap; }
+}
 @media(min-width:769px) and (max-width:1100px) {
   .router { grid-template-columns:minmax(250px,1fr) minmax(310px,1.1fr); gap:36px; }
   .prompt-stage { grid-column:1; grid-row:1/3; }
@@ -278,7 +299,7 @@ body[data-phase="decided"] .response { display:block; }
     <span class="header-title" data-t="appTitle">Jev Router</span>
     <span class="header-spacer"></span>
     <span id="mockBadge" class="chip sand hidden" data-t="mockBadge">mock</span>
-    <button class="btn" id="btnTools" type="button" data-t="tools" aria-haspopup="dialog" aria-controls="sideSheet" aria-expanded="false">Szczegóły</button>
+    <button class="btn" id="btnTools" type="button" aria-haspopup="dialog" aria-controls="sideSheet" aria-expanded="false">Otwórz panel</button>
     <div class="edu-seg" role="group" aria-label="Language">
       <button data-lang-btn="pl" class="active">PL</button>
       <button data-lang-btn="en">EN</button>
@@ -312,8 +333,8 @@ body[data-phase="decided"] .response { display:block; }
     <section class="flow-stage selection-stage" id="modelSelection" data-stage="models" aria-labelledby="modelsTitle">
       <div class="stage-heading"><h2 id="modelsTitle" data-t="modelSelection">Wybór modelu</h2></div>
       <div class="model-targets">
-        <div class="model-card" id="nLocal" data-model="local" data-selected="false"><span class="overline" data-t="nLocalOver">lokalnie</span><h3 data-t="nLocal">Mały model</h3><span class="mono model-name">gemma4:12b</span><span class="model-note" data-t="localNote">Dane zostają w firmie</span><span class="selection-mark" data-t="selectedModel" hidden>Wybrany</span></div>
-        <div class="model-card" id="nFrontier" data-model="frontier" data-selected="false"><span class="overline" data-t="nFrontierOver">zewnętrznie</span><h3 data-t="nFrontier">Model frontier</h3><span class="mono model-name">gpt-5.6-luna</span><span class="model-note" data-t="frontierNote">Zewnętrzny model</span><span class="selection-mark" data-t="selectedModel" hidden>Wybrany</span></div>
+        <div class="model-card" id="nLocal" data-model="local" data-selected="false"><span class="overline" data-t="nLocalOver">lokalnie</span><h3 data-t="nLocal">Model lokalny</h3><span class="mono model-name" data-t="localExamples">np. PLLuM, Bielik, Gemma</span><span class="model-note" data-t="localNote">Dane zostają w firmie</span><span class="selection-mark" data-t="selectedModel" hidden>Wybrany</span></div>
+        <div class="model-card" id="nFrontier" data-model="frontier" data-selected="false"><span class="overline" data-t="nFrontierOver">zewnętrznie</span><h3 data-t="nFrontier">Model frontier</h3><span class="mono model-name" data-t="frontierExamples">np. GPT, Claude, Gemini</span><span class="model-note" data-t="frontierNote">Zewnętrzny model</span><span class="selection-mark" data-t="selectedModel" hidden>Wybrany</span></div>
       </div>
       <button type="button" class="text-action" id="whyModel" data-open-panel="explanation" data-t="whyModel" disabled>Dlaczego ten model?</button>
     </section>
@@ -409,8 +430,6 @@ body[data-phase="decided"] .response { display:block; }
 // ─── Constants ───
 const LS = { lang: 'jevRouter.lang', worker: 'jevRouter.workerUrl', signals: 'jevRouter.signals', thresholds: 'jevRouter.thresholds' };
 const MODEL = 'jev-latest';
-const LOCAL_MODEL = 'gemma4:12b';
-const FRONTIER_MODEL = 'gpt-5.6-luna';
 const DEFAULT_THRESHOLDS = { noulYes: 0.65, noulNo: 0.35, scoreHigh: 1.5, minConfidence: 0.5 };
 
 const DEFAULT_SIGNALS = [
@@ -450,6 +469,9 @@ const PRESETS = [
 // ─── i18n ───
 const T = {
   pl: {
+    localExamples: 'np. PLLuM, Bielik, Gemma', frontierExamples: 'np. GPT, Claude, Gemini',
+    check_sheetSpace: 'Panel boczny nie zasłania routera',
+    openPanel: 'Otwórz panel', hidePanel: 'Ukryj panel',
     tools: 'Szczegóły', toolsTitle: 'Narzędzia i szczegóły', openSettings: 'Otwórz ustawienia',
     tryExample: 'Wypróbuj przykład', policyLead: 'Sygnały i reguły, które kierują prompt do właściwego modelu.', manageSignals: 'Edytuj sygnały',
     policyPriority: 'Blokada lokalna ma pierwszeństwo przed głosami.', oneRequest: 'jedno żądanie', waitingScores: 'Wyniki pojawią się po routowaniu.', scoresReady: 'Ocena sygnałów zakończona.',
@@ -461,7 +483,7 @@ const T = {
     appTitle: 'Jev Router', mockBadge: 'mock', settings: 'Ustawienia', promptTitle: 'Prompt użytkownika', promptPlaceholder: 'Wpisz prompt, który trafiłby do asystenta AI...',
     route: 'Routuj', presetsTitle: 'Przykłady', signalsTitle: 'Sygnały (pytania do Jev)', signalsLead: 'Każdy sygnał to jedno typowane pytanie. Wszystkie idą do Jev w jednym żądaniu, a polityka w kodzie podejmuje decyzję.',
     addSignal: 'Dodaj sygnał', editSignal: 'Edytuj sygnał', exportSignals: 'Eksport JSON', importSignals: 'Import JSON', routerTitle: 'Decyzja routera',
-    nPromptOver: 'wejście', nPrompt: 'Prompt', nPolicyOver: 'twój kod', nPolicy: 'Polityka', nLocalOver: 'lokalnie', nLocal: 'Mały model', nFrontierOver: 'zewnętrznie', nFrontier: 'Model frontier',
+    nPromptOver: 'wejście', nPrompt: 'Prompt', nPolicyOver: 'twój kod', nPolicy: 'Polityka', nLocalOver: 'lokalnie', nLocal: 'Model lokalny', nFrontierOver: 'zewnętrznie', nFrontier: 'Model frontier',
     logTitle: 'Dziennik decyzji', clearLog: 'Wyczyść', thTime: 'Czas', thPrompt: 'Prompt', thTarget: 'Cel', thFired: 'Sygnały', thTokens: 'Tokeny',
     rawTitle: 'Surowe żądanie i odpowiedź Jev', rawReq: 'żądanie', rawRes: 'odpowiedź', workerHint: 'Puste pole = tryb mock (bez prawdziwych wywołań Jev).',
     thNoulYes: 'Noul: próg TAK', thNoulNo: 'Noul: próg NIE', thScoreHigh: 'Score: próg "wysoki"', thMinConf: 'Minimalna pewność (confidence)', resetSignals: 'Przywróć domyślne sygnały', close: 'Zamknij',
@@ -475,6 +497,9 @@ const T = {
     confirmDelete: 'Usunąć ten sygnał?', importBad: 'Nieprawidłowy plik JSON.',
   },
   en: {
+    localExamples: 'e.g. PLLuM, Bielik, Gemma', frontierExamples: 'e.g. GPT, Claude, Gemini',
+    check_sheetSpace: 'Docked sheet leaves the router visible',
+    openPanel: 'Open panel', hidePanel: 'Hide panel',
     tools: 'Details', toolsTitle: 'Tools & details', openSettings: 'Open settings',
     tryExample: 'Try an example', policyLead: 'Signals and rules that direct the prompt to the right model.', manageSignals: 'Edit signals',
     policyPriority: 'Local locks take priority over votes.', oneRequest: 'one request', waitingScores: 'Route a prompt to see the scores.', scoresReady: 'Signal evaluation complete.',
@@ -486,7 +511,7 @@ const T = {
     appTitle: 'Jev Router', mockBadge: 'mock', settings: 'Settings', promptTitle: 'User prompt', promptPlaceholder: 'Type a prompt that would go to an AI assistant...',
     route: 'Route', presetsTitle: 'Examples', signalsTitle: 'Signals (questions for Jev)', signalsLead: 'Each signal is one typed question. All of them go to Jev in a single request, and the policy in code makes the decision.',
     addSignal: 'Add signal', editSignal: 'Edit signal', exportSignals: 'Export JSON', importSignals: 'Import JSON', routerTitle: 'Router decision',
-    nPromptOver: 'input', nPrompt: 'Prompt', nPolicyOver: 'your code', nPolicy: 'Policy', nLocalOver: 'on-premise', nLocal: 'Small model', nFrontierOver: 'external', nFrontier: 'Frontier model',
+    nPromptOver: 'input', nPrompt: 'Prompt', nPolicyOver: 'your code', nPolicy: 'Policy', nLocalOver: 'on-premise', nLocal: 'Local model', nFrontierOver: 'external', nFrontier: 'Frontier model',
     logTitle: 'Decision log', clearLog: 'Clear', thTime: 'Time', thPrompt: 'Prompt', thTarget: 'Target', thFired: 'Signals', thTokens: 'Tokens',
     rawTitle: 'Raw Jev request and response', rawReq: 'request', rawRes: 'response', workerHint: 'Empty = mock mode (no real Jev calls).',
     thNoulYes: 'Noul: YES threshold', thNoulNo: 'Noul: NO threshold', thScoreHigh: 'Score: "high" threshold', thMinConf: 'Minimum confidence', resetSignals: 'Restore default signals', close: 'Close',
@@ -656,7 +681,7 @@ function applyI18n() {
   document.querySelectorAll('[data-t-placeholder]').forEach((el) => { el.placeholder = t(el.dataset.tPlaceholder); });
   document.querySelectorAll('[data-t-title]').forEach((el) => { el.title = t(el.dataset.tTitle); });
   document.querySelectorAll('[data-lang-btn]').forEach((b) => b.classList.toggle('active', b.dataset.langBtn === STATE.lang));
-  renderPresets(); renderSignals(); renderRouter(); renderLog();
+  renderPresets(); renderSignals(); renderRouter(); renderLog(); syncSheetState();
 }
 
 function renderPresets() {
@@ -791,6 +816,7 @@ function verify() {
     stageOrder: stages.map((el) => el.id).join(',') === 'nPrompt,nPolicy,nJev,modelSelection',
     signalSync: sameIds('#policySignals .policy-signal') && sameIds('#scoreSignals .score-signal'),
     sideSheet: sideSheetEl.tagName === 'DIALOG',
+    sheetSpace: !sideSheetEl.open || !isSheetDocked() || (!sideSheetEl.matches(':modal') && document.querySelector('main').getBoundingClientRect().right <= sideSheetEl.getBoundingClientRect().left),
     modelSelection: JSON.stringify([...document.querySelectorAll('.model-card[data-selected="true"]')].map((el) => el.dataset.model)) === JSON.stringify(STATE.phase === 'decided' && STATE.decision ? [STATE.decision.target] : []) && routerEl.dataset.target === (STATE.decision ? STATE.decision.target : 'none'),
     geometry: stages.every((el) => { const r = el.getBoundingClientRect(); return r.left >= base.left - 1 && r.right <= base.right + 1 && r.top >= base.top - 1 && r.bottom <= base.bottom + 1; }),
     noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
@@ -804,14 +830,38 @@ function renderVerification() {
   }));
 }
 
+function isSheetDocked() { return window.innerWidth >= 1280; }
+function syncSheetLayout() {
+  const docked = isSheetDocked();
+  document.body.dataset.sheetMode = docked ? 'docked' : 'overlay';
+  if (sideSheetEl.open) {
+    const modal = sideSheetEl.matches(':modal');
+    if (docked && modal) { sideSheetEl.close(); sideSheetEl.show(); }
+    else if (!docked && !modal) sideSheetEl.close();
+  }
+  syncSheetState();
+}
 function openSideSheet(panel) {
   if (panel) {
     sideSheetEl.querySelectorAll(':scope .sheet-items > details').forEach((el) => { el.open = el.dataset.panel === panel; });
   }
-  if (!sideSheetEl.open) sideSheetEl.showModal();
-  document.body.dataset.sheet = 'open'; $('#btnTools').setAttribute('aria-expanded', 'true');
+  if (!sideSheetEl.open) {
+    if (isSheetDocked()) sideSheetEl.show();
+    else sideSheetEl.showModal();
+  }
+  syncSheetState();
   if (panel) sideSheetEl.querySelector(`[data-panel="${panel}"]`).scrollIntoView({ block: 'nearest' });
   renderVerification();
+}
+function syncSheetState() {
+  document.body.dataset.sheet = sideSheetEl.open ? 'open' : 'closed';
+  $('#btnTools').setAttribute('aria-expanded', String(sideSheetEl.open));
+  $('#btnTools').textContent = t(sideSheetEl.open ? 'hidePanel' : 'openPanel');
+  requestAnimationFrame(drawConnections);
+}
+function closeSideSheet() {
+  sideSheetEl.close();
+  syncSheetState();
 }
 function invalidateDecision() {
   STATE.requestId++; STATE.answers = {}; STATE.decision = null; STATE.lastRequest = null; STATE.lastResponse = null;
@@ -826,7 +876,7 @@ function renderResponse() {
   const local = d.target === 'local';
   const tags = local ? ['tagPrivate', 'tagCheap', 'tagFast'] : ['tagExternal', 'tagPaid', 'tagSlow'];
   responseEl.innerHTML = `<h3>${t(local ? 'respLocal' : 'respFrontier')}</h3>
-    <div class="model">${local ? LOCAL_MODEL : FRONTIER_MODEL}</div>
+    <div class="model">${t(local ? 'localExamples' : 'frontierExamples')}</div>
     <div class="tags">${tags.map((k) => `<span>${t(k)}</span>`).join('')}</div>
     <ul>${d.reasons.map((r) => `<li>${esc(reasonText(r))}</li>`).join('')}</ul>
     <div class="sim">${t('simNote')}</div>`;
@@ -970,14 +1020,16 @@ function importSignals(file) {
 // ─── Listeners ───
 btnRoute.addEventListener('click', route);
 document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !document.querySelector('dialog[open]')) { e.preventDefault(); route(); }
-  if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey && !['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog[open]')) {
+  if (e.key === 'Escape' && sideSheetEl.open && !document.querySelector('dialog:modal')) closeSideSheet();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !document.querySelector('dialog:modal')) { e.preventDefault(); route(); }
+  if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey && !['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog:modal')) {
     const p = PRESETS[+e.key - 1]; if (p) { invalidateDecision(); promptEl.value = p.text; route(); }
   }
 });
 presetsEl.addEventListener('click', (e) => {
   const b = e.target.closest('[data-preset]'); if (!b) return;
-  sideSheetEl.close(); invalidateDecision();
+  if (!isSheetDocked()) closeSideSheet();
+  invalidateDecision();
   promptEl.value = PRESETS.find((p) => p.key === b.dataset.preset).text; route();
 });
 document.querySelectorAll('[data-lang-btn]').forEach((b) => b.addEventListener('click', () => { STATE.lang = b.dataset.langBtn; writeStorage(LS.lang, STATE.lang); applyI18n(); }));
@@ -1017,16 +1069,16 @@ $('#btnResetSignals').addEventListener('click', () => { STATE.signals = structur
 $('#btnClearLog').addEventListener('click', () => { STATE.log = []; renderLog(); });
 
 promptEl.addEventListener('input', invalidateDecision);
-$('#btnTools').addEventListener('click', () => openSideSheet());
+$('#btnTools').addEventListener('click', () => sideSheetEl.open ? closeSideSheet() : openSideSheet());
 document.querySelectorAll('[data-open-panel]').forEach((button) => button.addEventListener('click', () => openSideSheet(button.dataset.openPanel)));
-$('#btnCloseSheet').addEventListener('click', () => sideSheetEl.close());
-sideSheetEl.addEventListener('close', () => { document.body.dataset.sheet = 'closed'; $('#btnTools').setAttribute('aria-expanded', 'false'); });
+$('#btnCloseSheet').addEventListener('click', closeSideSheet);
+sideSheetEl.addEventListener('close', syncSheetState);
 sideSheetEl.addEventListener('click', (event) => {
   if (event.target !== sideSheetEl) return;
   const r = sideSheetEl.getBoundingClientRect();
-  if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) sideSheetEl.close();
+  if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) closeSideSheet();
 });
-window.addEventListener('resize', drawConnections);
+window.addEventListener('resize', () => { syncSheetLayout(); drawConnections(); });
 
 // ─── Init ───
 STATE.lang = ['pl', 'en'].includes(readStorage(LS.lang)) ? readStorage(LS.lang) : 'pl';
@@ -1036,6 +1088,8 @@ STATE.thresholds = { ...DEFAULT_THRESHOLDS, ...loadJSON(LS.thresholds, {}) };
 renderMode(); applyI18n(); renderRaw(); setPhase('idle', '');
 
 window.App = { STATE, T, t, decide, signalState, buildRequest, mockJev, route, redecide, validSignal, DEFAULT_SIGNALS, PRESETS, verify, openSideSheet, CONTRACT: { version: 2, stages: ['prompt', 'policy', 'jev', 'models'] } };
+syncSheetLayout();
+if (isSheetDocked()) { openSideSheet('signals'); sideSheetEl.scrollTop = 0; promptEl.focus({ preventScroll: true }); }
 new ResizeObserver(drawConnections).observe(routerEl);
 document.fonts.ready.then(drawConnections);
 requestAnimationFrame(drawConnections);

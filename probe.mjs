@@ -31,7 +31,7 @@ const chromium = await loadChromium();
 const args = process.argv.slice(2);
 const realIdx = args.indexOf('--real');
 const workerUrl = realIdx >= 0 ? args[realIdx + 1] || null : null;
-const base = args.find((arg, index) => /^https?:\/\//.test(arg) && index !== realIdx + 1) || 'http://localhost:8766/index.html';
+const base = args.find((arg, index) => /^https?:\/\//.test(arg) && (realIdx < 0 || index !== realIdx + 1)) || 'http://localhost:8766/index.html';
 const url = workerUrl ? base : base + (base.includes('?') ? '&' : '?') + 'mock=1';
 const MOCK = !workerUrl;
 
@@ -61,7 +61,7 @@ async function openSheet(panel) {
 }
 
 async function closeSheet() {
-  if (await page.getAttribute('#sideSheet', 'open')) await page.click('#btnCloseSheet');
+  if (await page.evaluate(() => document.querySelector('#sideSheet').open)) await page.click('#btnCloseSheet');
   await page.waitForFunction(() => !document.querySelector('#sideSheet')?.open, null, { timeout: 5000 });
 }
 
@@ -98,6 +98,22 @@ try {
   const initialContract = await page.evaluate(() => ({ report: App.verify(), stages: [...document.querySelectorAll('#router > section')].map((el) => el.id) }));
   check('desktop DOM contract', initialContract.report.ok && initialContract.stages.join(',') === 'nPrompt,nPolicy,nJev,modelSelection', initialContract);
 
+  const layoutStyle = await page.evaluate(() => {
+    const style = (id) => getComputedStyle(document.getElementById(id));
+    const rect = (id) => document.getElementById(id).getBoundingClientRect();
+    return {
+      whitePrompt: style('prompt').backgroundColor === 'rgb(255, 255, 255)',
+      compactStages: ['nPolicy', 'nJev'].every((id) => rect(id).height < rect('nPrompt').height),
+      whiteModelText: ['nLocal', 'nFrontier'].every((id) => style(id).color === 'rgb(255, 255, 255)'),
+      coloredDestinations: style('nLocal').backgroundColor !== style('nFrontier').backgroundColor,
+      docked: document.querySelector('#sideSheet').open && !document.querySelector('#sideSheet').matches(':modal') && document.querySelector('main').getBoundingClientRect().right <= rect('sideSheet').left,
+      examples: document.querySelector('#nLocal').textContent.includes('PLLuM, Bielik, Gemma') && document.querySelector('#nFrontier').textContent.includes('GPT, Claude, Gemini'),
+    };
+  });
+  check('white prompt, compact stages, model examples, and docked settings', Object.values(layoutStyle).every(Boolean), layoutStyle);
+  await page.locator('#prompt').press('Control+Enter');
+  check('route shortcut works beside nonmodal settings', await page.evaluate(() => document.querySelector('#status').textContent === App.t('emptyPrompt')));
+
   // Keep the contract valid at desktop, tablet and mobile breakpoints.
   for (const [label, width, height] of [['desktop', 1440, 1000], ['tablet', 1024, 1000], ['mobile', 768, 1000], ['mobile-compact', 320, 900]]) {
     await page.setViewportSize({ width, height });
@@ -111,6 +127,10 @@ try {
   await page.click('#btnTools');
   await page.waitForSelector('#sideSheet[open]');
   check('tools button opens side sheet', await page.getAttribute('body', 'data-sheet') === 'open');
+  await page.click('#btnTools');
+  check('header toggle hides the panel', await page.getAttribute('body', 'data-sheet') === 'closed');
+  await page.click('#btnTools');
+  check('header toggle reopens the panel', await page.getAttribute('body', 'data-sheet') === 'open');
   await closeSheet();
   check('close button closes side sheet', await page.getAttribute('body', 'data-sheet') === 'closed');
 
@@ -154,6 +174,7 @@ try {
   await page.click('#signalForm button[type="submit"]');
   const afterEdit = await page.evaluate(() => ({ name: App.STATE.signals.find((signal) => signal.id === 'asks_for_code')?.name.en, phase: App.STATE.phase, values: [...document.querySelectorAll('#scoreSignals .score-signal')].map((el) => el.dataset.value) }));
   check('CRUD update signal invalidates scores', afterEdit.name === 'Asks for source code' && afterEdit.phase === 'idle' && afterEdit.values.every((value) => value === ''), afterEdit);
+  await closeSheet();
 
   await page.fill('#prompt', 'Write a Python function that parses ISO dates.');
   await page.click('#btnRoute');
@@ -192,8 +213,8 @@ try {
 
   await page.fill('#prompt', '');
   await page.click('#btnRoute');
-  const empty = await page.evaluate(() => ({ phase: App.STATE.phase, status: document.querySelector('#status')?.textContent, request: App.STATE.lastRequest }));
-  check('empty prompt stays idle', empty.phase === 'idle' && empty.request === null && empty.status === App.t('emptyPrompt'), empty);
+  const empty = await page.evaluate(() => ({ phase: App.STATE.phase, status: document.querySelector('#status')?.textContent, expectedStatus: App.t('emptyPrompt'), request: App.STATE.lastRequest }));
+  check('empty prompt stays idle', empty.phase === 'idle' && empty.request === null && empty.status === empty.expectedStatus, empty);
 
   // Mock-only stale-response test: editing the prompt while Jev is asking
   // invalidates the request, and the old answer must not commit afterwards.
