@@ -256,7 +256,7 @@ body[data-phase="decided"] .response { display:block; }
 .response.local { background:var(--green); color:var(--paper); }
 .response.frontier { background:var(--blue); color:var(--paper); }
 .response h3 { color:inherit; font-size:var(--body); }
-.response .model,.response .sim { font-size:var(--stage-caption); margin-top:8px; }
+.response .model { font-size:var(--stage-caption); margin-top:8px; }
 .response .tags { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
 .response .tags span { background:var(--paper); color:var(--ink); font-size:var(--overline); padding:3px 8px; border-radius:var(--r-pill); }
 .response ul { padding-left:18px; font-size:var(--body-sm); }
@@ -529,7 +529,7 @@ const T = {
     stFire: 'aktywny', stClear: 'czysty', stUncertain: 'niepewny', stIdle: 'czeka', local: 'lokalnie', frontier: 'frontier',
     attach: 'Dołącz plik', attachHint: '(txt, md, csv, pdf · 1 strona)', attachRemove: 'Usuń załącznik', attachTruncated: 'przycięto do 1 strony', attachUnsupported: 'Nieobsługiwany typ pliku: {name}', attachTooMany: 'Maksymalnie {n} załączniki.', attachReadError: 'Nie udało się odczytać: {name}', attachEmpty: 'Plik nie zawiera tekstu: {name}', attachReading: 'Czytam załącznik...',
     emptyPrompt: 'Wpisz prompt.', asking: 'Jev ocenia sygnały...', decidedLocal: 'Decyzja: mały model lokalny.', decidedFrontier: 'Decyzja: model frontier.', errorPrefix: 'Błąd: ',
-    questions: 'pytań', tokens: 'tok', respLocal: 'Odpowiedź z lokalnego modelu', respFrontier: 'Odpowiedź z modelu frontier', simNote: 'Symulacja: właściwe wywołanie modelu nie jest wykonywane.',
+    questions: 'pytań', tokens: 'tok', respLocal: 'Odpowiedź z lokalnego modelu', respFrontier: 'Odpowiedź z modelu frontier',
     tagPrivate: 'dane zostają w firmie', tagExternal: 'dane opuszczają firmę', tagCheap: 'koszt ~0', tagPaid: 'koszt płatny', tagFast: 'niska latencja', tagSlow: 'wyższa latencja',
     rLock: 'blokada', rVote: 'głos', rUncertainSafe: 'niepewny sygnał, bezpieczna strona', rDefault: 'brak sygnałów za frontier, domyślnie lokalnie', rNoQuestions: 'brak aktywnych sygnałów',
     confirmDelete: 'Usunąć ten sygnał?', importBad: 'Nieprawidłowy plik JSON.',
@@ -558,7 +558,7 @@ const T = {
     stFire: 'fired', stClear: 'clear', stUncertain: 'uncertain', stIdle: 'idle', local: 'local', frontier: 'frontier',
     attach: 'Attach file', attachHint: '(txt, md, csv, pdf · 1 page)', attachRemove: 'Remove attachment', attachTruncated: 'clipped to 1 page', attachUnsupported: 'Unsupported file type: {name}', attachTooMany: 'At most {n} attachments.', attachReadError: 'Could not read: {name}', attachEmpty: 'No text found in: {name}', attachReading: 'Reading attachment...',
     emptyPrompt: 'Type a prompt first.', asking: 'Jev is evaluating the signals...', decidedLocal: 'Decision: local small model.', decidedFrontier: 'Decision: frontier model.', errorPrefix: 'Error: ',
-    questions: 'questions', tokens: 'tok', respLocal: 'Response from the local model', respFrontier: 'Response from the frontier model', simNote: 'Simulation: the actual model call is not made.',
+    questions: 'questions', tokens: 'tok', respLocal: 'Response from the local model', respFrontier: 'Response from the frontier model',
     tagPrivate: 'data stays in-house', tagExternal: 'data leaves the company', tagCheap: 'cost ~0', tagPaid: 'paid tokens', tagFast: 'low latency', tagSlow: 'higher latency',
     rLock: 'lock', rVote: 'vote', rUncertainSafe: 'uncertain signal, safe side', rDefault: 'no frontier votes, default local', rNoQuestions: 'no enabled signals',
     confirmDelete: 'Delete this signal?', importBad: 'Invalid JSON file.',
@@ -1053,8 +1053,7 @@ function renderResponse() {
   responseEl.innerHTML = `<h3>${t(local ? 'respLocal' : 'respFrontier')}</h3>
     <div class="model">${t(local ? 'localExamples' : 'frontierExamples')}</div>
     <div class="tags">${tags.map((k) => `<span>${t(k)}</span>`).join('')}</div>
-    <ul>${d.reasons.map((r) => `<li>${esc(reasonText(r))}</li>`).join('')}</ul>
-    <div class="sim">${t('simNote')}</div>`;
+    <ul>${d.reasons.map((r) => `<li>${esc(reasonText(r))}</li>`).join('')}</ul>`;
 }
 
 function renderLog() {
