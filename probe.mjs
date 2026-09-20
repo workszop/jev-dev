@@ -117,7 +117,8 @@ try {
   check('white prompt, compact stages, model examples, and docked settings', Object.values(layoutStyle).every(Boolean), layoutStyle);
   await closeSheet();
   await page.locator('#prompt').press('Control+Enter');
-  check('route shortcut works beside nonmodal settings', await page.evaluate(() => document.querySelector('#status').textContent === App.t('emptyPrompt')));
+  check('route shortcut works beside nonmodal settings', (await waitForDecision()) === 'decided' && (await page.inputValue('#prompt')).length > 0);
+  await page.evaluate(() => { App.STATE.log = []; }); await page.fill('#prompt', '');
 
   // Keep the contract valid at desktop, tablet and mobile breakpoints.
   for (const [label, width, height] of [['desktop', 1440, 1000], ['tablet', 1024, 1000], ['mobile', 768, 1000], ['mobile-compact', 320, 900]]) {
@@ -235,10 +236,24 @@ try {
   check('CRUD delete signal', afterDelete.count === 4 && !afterDelete.ids.includes('asks_for_code') && afterDelete.phase === 'idle', afterDelete);
   await closeSheet();
 
+  // Empty prompt + Route draws a random question from any category and routes it.
   await page.fill('#prompt', '');
   await page.click('#btnRoute');
-  const empty = await page.evaluate(() => ({ phase: App.STATE.phase, status: document.querySelector('#status')?.textContent, expectedStatus: App.t('emptyPrompt'), request: App.STATE.lastRequest }));
-  check('empty prompt stays idle', empty.phase === 'idle' && empty.request === null && empty.status === empty.expectedStatus, empty);
+  const emptyPhase = await waitForDecision();
+  const drawnAny = await page.evaluate(() => { const v = document.querySelector('#prompt').value; return v.length > 0 && App.PRESETS.some((p) => App.questionPool(p.key).some((q) => q.en === v || q.pl === v)); });
+  check('empty prompt draws a random example and routes it', emptyPhase === 'decided' && drawnAny);
+  await page.waitForFunction(() => +getComputedStyle(document.querySelector('.model-card[data-selected="false"]')).opacity < 0.5, null, { timeout: 3000 }).catch(() => {});
+  const marks = await page.evaluate(() => {
+    const sel = document.querySelector('.model-card[data-selected="true"]'), other = document.querySelector('.model-card[data-selected="false"]');
+    const chip = document.querySelector('#modelChoice');
+    return { selectedOutline: getComputedStyle(sel).outlineWidth, badgeVisible: !sel.querySelector('.selection-mark').hidden, otherOpacity: +getComputedStyle(other).opacity, chip: chip.hidden ? '' : chip.textContent };
+  });
+  check('chosen model is unmistakable (ring, badge, chip, faded other)', parseFloat(marks.selectedOutline) >= 4 && marks.badgeVisible && marks.otherOpacity < 0.5 && marks.chip.length > 2, marks);
+  const geometry = await page.evaluate(() => {
+    const w = (id) => document.getElementById(id).getBoundingClientRect().width;
+    return { policy: Math.round(w('nPolicy')), jev: Math.round(w('nJev')), icons: ['#nLocal .model-icon', '#nFrontier .model-icon'].every((sel) => document.querySelector(sel)) };
+  });
+  check('Jev Router box as wide as Polityka, model icons present', Math.abs(geometry.policy - geometry.jev) <= 1 && geometry.icons, geometry);
 
   // Mock-only stale-response test: editing the prompt while Jev is asking
   // invalidates the request, and the old answer must not commit afterwards.
