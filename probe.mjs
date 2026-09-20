@@ -1,79 +1,243 @@
-// Headless DOM-contract probe for the Jev Router demo (mock mode).
-// Usage: node probe.mjs [baseUrl]      default http://localhost:8766/index.html
-// Real mode: node probe.mjs http://localhost:8766/index.html --real https://jev-router.<acct>.workers.dev/
-import { chromium } from '/home/andrzey/.hermes/hermes-agent/node_modules/playwright/index.mjs';
+// Headless DOM-contract probe for the Jev Router demo.
+// Usage: node probe.mjs [baseUrl]
+// Real mode: node probe.mjs [baseUrl] --real https://jev-router.<acct>.workers.dev/
+// The default run is mock-only and is deterministic enough for the interaction checks.
 
+import { pathToFileURL } from 'node:url';
+
+// Keep the old absolute-path fallback for this workspace, but allow a regular
+// package install or an explicit module path in CI.
+async function loadChromium() {
+  const candidates = [
+    process.env.PLAYWRIGHT_MODULE,
+    'playwright',
+    '/home/andrzey/.hermes/hermes-agent/node_modules/playwright/index.mjs',
+  ].filter(Boolean);
+  const errors = [];
+  for (const candidate of candidates) {
+    try {
+      const specifier = candidate.startsWith('/') ? pathToFileURL(candidate).href : candidate;
+      const mod = await import(specifier);
+      if (mod.chromium) return mod.chromium;
+      errors.push(`${candidate}: no chromium export`);
+    } catch (error) {
+      errors.push(`${candidate}: ${error.message}`);
+    }
+  }
+  throw new Error(`Playwright could not be loaded. Tried: ${errors.join(' | ')}`);
+}
+
+const chromium = await loadChromium();
 const args = process.argv.slice(2);
-const base = args.find((a) => a.startsWith('http')) || 'http://localhost:8766/index.html';
 const realIdx = args.indexOf('--real');
-const workerUrl = realIdx >= 0 ? args[realIdx + 1] : null;
+const workerUrl = realIdx >= 0 ? args[realIdx + 1] || null : null;
+const base = args.find((arg, index) => /^https?:\/\//.test(arg) && index !== realIdx + 1) || 'http://localhost:8766/index.html';
 const url = workerUrl ? base : base + (base.includes('?') ? '&' : '?') + 'mock=1';
+const MOCK = !workerUrl;
 
 const results = [];
-const check = (name, ok, detail = '') => { results.push({ name, ok, detail }); };
+const pageErrors = [];
+const check = (name, ok, detail = '') => {
+  const renderedDetail = typeof detail === 'string' ? detail : JSON.stringify(detail);
+  results.push({ name, ok: Boolean(ok), detail: renderedDetail || '' });
+};
 
-const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-page.on('pageerror', (e) => check('no page errors', false, e.message));
-await page.goto(url);
-if (workerUrl) {
-  await page.evaluate((w) => { localStorage.setItem('jevRouter.workerUrl', w); }, workerUrl);
-  await page.reload();
+let browser;
+let page;
+
+async function waitForDecision() {
+  await page.waitForSelector('body[data-phase="decided"], body[data-phase="error"]', { timeout: 12000 });
+  return page.getAttribute('body', 'data-phase');
 }
-await page.waitForSelector('#signals .signal');
 
-check('phase idle at start', (await page.getAttribute('body', 'data-phase')) === 'idle');
-check('mock flag', (await page.getAttribute('body', 'data-mock')) === String(!workerUrl));
-check('4 default signals', (await page.$$('.signal')).length === 4);
-
-const presets = await page.evaluate(() => App.PRESETS.map((p) => ({ key: p.key, expect: p.expect })));
-for (const p of presets) {
-  await page.click(`[data-preset="${p.key}"]`);
-  await page.waitForSelector('body[data-phase="decided"], body[data-phase="error"]', { timeout: 20000 });
-  const phase = await page.getAttribute('body', 'data-phase');
-  const target = await page.getAttribute('#router', 'data-target');
-  const states = await page.$$eval('.signal', (els) => Object.fromEntries(els.map((e) => [e.dataset.id, `${e.dataset.state}:${e.dataset.value}`])));
-  const status = await page.textContent('#status');
-  const detail = `target=${target} ${JSON.stringify(states)}${phase === 'error' ? ' ' + status : ''}`;
-  // In real mode the "edge" preset is deliberately ambiguous; only require a decision.
-  const expected = workerUrl && p.key === 'edge' ? target : p.expect;
-  check(`preset ${p.key} → ${p.expect}`, phase === 'decided' && target === expected, detail);
+async function waitForSheet(panel) {
+  await page.waitForSelector('#sideSheet[open]', { timeout: 5000 });
+  await page.waitForFunction((name) => document.querySelector(`details[data-panel="${name}"]`)?.open === true, panel, { timeout: 5000 });
 }
-check('log has 6 rows', (await page.$$('#log tr[data-target]')).length === 6);
-check('response card visible', await page.isVisible('#response'));
 
-// Add a signal through the dialog and confirm it reaches the request.
-await page.click('#btnAddSignal');
-await page.fill('#sigNamePl', 'Prośba o kod');
-await page.fill('#sigNameEn', 'Asks for code');
-await page.selectOption('#sigType', 'noul');
-await page.selectOption('#sigPolicy', 'soft_frontier');
-await page.fill('#sigInstr', 'Does the prompt ask for source code to be written or debugged?');
-await page.click('#signalForm button[type="submit"]');
-check('5 signals after add', (await page.$$('.signal')).length === 5);
-await page.fill('#prompt', 'Write a Python function that parses ISO dates.');
-await page.click('#btnRoute');
-await page.waitForSelector('body[data-phase="decided"], body[data-phase="error"]', { timeout: 20000 });
-const raw = JSON.parse(await page.textContent('#rawRequest'));
-check('new question in request', Object.keys(raw.questions).includes('asks_for_code'), Object.keys(raw.questions).join(','));
+async function openSheet(panel) {
+  await page.evaluate((name) => App.openSideSheet(name), panel);
+  await waitForSheet(panel);
+}
 
-// Threshold change re-decides without a new request.
-await page.click('#btnSettings');
-const before = await page.getAttribute('#router', 'data-target');
-await page.$eval('#thScoreHigh', (el) => { el.value = '0.5'; el.dispatchEvent(new Event('input', { bubbles: true })); });
-const after = await page.getAttribute('#router', 'data-target');
-check('threshold slider re-decides live', typeof after === 'string', `before=${before} after=${after}`);
-await page.keyboard.press('Escape');
+async function closeSheet() {
+  if (await page.getAttribute('#sideSheet', 'open')) await page.click('#btnCloseSheet');
+  await page.waitForFunction(() => !document.querySelector('#sideSheet')?.open, null, { timeout: 5000 });
+}
 
-// Language toggle.
-await page.click('[data-lang-btn="en"]');
-check('EN toggle', (await page.textContent('#btnRoute')).includes('Route'));
-await page.click('[data-lang-btn="pl"]');
+try {
+  browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+  page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  page.setDefaultTimeout(6000);
+  page.setDefaultNavigationTimeout(10000);
+  page.on('pageerror', (error) => pageErrors.push(error));
 
-await page.screenshot({ path: process.env.SHOT || '/tmp/jev-router-probe.png', fullPage: true });
-await browser.close();
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
+  if (workerUrl) {
+    await page.evaluate((worker) => { localStorage.setItem('jevRouter.workerUrl', worker); }, workerUrl);
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
+  }
+  await page.waitForSelector('.router#router');
+  await page.waitForTimeout(150);
 
-let fails = 0;
-for (const r of results) { if (!r.ok) fails++; console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}${r.detail ? '  ' + r.detail : ''}`); }
-console.log(`\n${results.length - fails}/${results.length} passed`);
-process.exit(fails ? 1 : 0);
+  check('phase idle at start', (await page.getAttribute('body', 'data-phase')) === 'idle');
+  check('mock flag', (await page.getAttribute('body', 'data-mock')) === String(MOCK));
+  check('4 default signals in side sheet', (await page.$$eval('#signals .signal', (els) => els.length)) === 4);
+
+  const apiContract = await page.evaluate(() => {
+    const original = ['STATE', 'T', 't', 'decide', 'signalState', 'buildRequest', 'mockJev', 'route', 'redecide', 'validSignal', 'DEFAULT_SIGNALS', 'PRESETS'];
+    return {
+      version: App.CONTRACT?.version,
+      original: original.filter((key) => !(key in App)),
+      openSideSheet: typeof App.openSideSheet,
+      verify: typeof App.verify,
+    };
+  });
+  check('App contract v2 and original API', apiContract.version === 2 && !apiContract.original.length && apiContract.openSideSheet === 'function' && apiContract.verify === 'function', apiContract);
+
+  const initialContract = await page.evaluate(() => ({ report: App.verify(), stages: [...document.querySelectorAll('#router > section')].map((el) => el.id) }));
+  check('desktop DOM contract', initialContract.report.ok && initialContract.stages.join(',') === 'nPrompt,nPolicy,nJev,modelSelection', initialContract);
+
+  // Keep the contract valid at desktop, tablet and mobile breakpoints.
+  for (const [label, width, height] of [['desktop', 1440, 1000], ['tablet', 1024, 1000], ['mobile', 768, 1000], ['mobile-compact', 320, 900]]) {
+    await page.setViewportSize({ width, height });
+    await page.waitForTimeout(120);
+    const report = await page.evaluate(() => App.verify());
+    check(`${label} responsive contract`, report.ok, report.checks);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.waitForTimeout(120);
+
+  await page.click('#btnTools');
+  await page.waitForSelector('#sideSheet[open]');
+  check('tools button opens side sheet', await page.getAttribute('body', 'data-sheet') === 'open');
+  await closeSheet();
+  check('close button closes side sheet', await page.getAttribute('body', 'data-sheet') === 'closed');
+
+  const presets = await page.evaluate(() => App.PRESETS.map((preset) => ({ key: preset.key, expect: preset.expect })));
+  check('six presets exposed', presets.length === 6, presets.map((preset) => preset.key).join(','));
+  for (const preset of presets) {
+    await openSheet('examples');
+    await page.click(`#presets [data-preset="${preset.key}"]`);
+    const phase = await waitForDecision();
+    const target = await page.getAttribute('#router', 'data-target');
+    const states = await page.$$eval('#scoreSignals .score-signal', (els) => Object.fromEntries(els.map((el) => [el.dataset.id, `${el.dataset.state}:${el.dataset.value}`])));
+    const status = await page.textContent('#status');
+    const detail = `target=${target} ${JSON.stringify(states)}${phase === 'error' ? ` ${status}` : ''}`;
+    // The live worker can classify the deliberately ambiguous example either way.
+    const expected = workerUrl && preset.key === 'edge' ? target : preset.expect;
+    check(`preset ${preset.key} → ${preset.expect}`, phase === 'decided' && target === expected, detail);
+  }
+  check('log has 6 rows', (await page.$$eval('#log tr[data-target]', (els) => els.length)) === 6);
+
+  await openSheet('explanation');
+  check('response explanation has content', (await page.textContent('#response')).trim().length > 0);
+  await closeSheet();
+
+  // CRUD: create, update, use in a request, then delete a signal. Signal
+  // configuration changes are expected to invalidate an existing decision.
+  await openSheet('signals');
+  await page.click('#btnAddSignal');
+  await page.waitForSelector('#dlgSignal[open]');
+  await page.fill('#sigNamePl', 'Prośba o kod');
+  await page.fill('#sigNameEn', 'Asks for code');
+  await page.selectOption('#sigType', 'noul');
+  await page.selectOption('#sigPolicy', 'soft_frontier');
+  await page.fill('#sigInstr', 'Does the prompt ask for source code to be written or debugged?');
+  await page.click('#signalForm button[type="submit"]');
+  const afterAdd = await page.evaluate(() => ({ count: document.querySelectorAll('#signals .signal').length, phase: App.STATE.phase, answers: Object.keys(App.STATE.answers).length, id: App.STATE.signals.at(-1)?.id }));
+  check('CRUD create signal invalidates scores', afterAdd.count === 5 && afterAdd.phase === 'idle' && afterAdd.answers === 0 && afterAdd.id === 'asks_for_code', afterAdd);
+
+  await page.click('#signals [data-edit="asks_for_code"]');
+  await page.waitForSelector('#dlgSignal[open]');
+  await page.fill('#sigNameEn', 'Asks for source code');
+  await page.click('#signalForm button[type="submit"]');
+  const afterEdit = await page.evaluate(() => ({ name: App.STATE.signals.find((signal) => signal.id === 'asks_for_code')?.name.en, phase: App.STATE.phase, values: [...document.querySelectorAll('#scoreSignals .score-signal')].map((el) => el.dataset.value) }));
+  check('CRUD update signal invalidates scores', afterEdit.name === 'Asks for source code' && afterEdit.phase === 'idle' && afterEdit.values.every((value) => value === ''), afterEdit);
+
+  await page.fill('#prompt', 'Write a Python function that parses ISO dates.');
+  await page.click('#btnRoute');
+  const addRoutePhase = await waitForDecision();
+  const raw = JSON.parse(await page.textContent('#rawRequest'));
+  check('new question appears in Jev request', addRoutePhase === 'decided' && Object.keys(raw.questions).includes('asks_for_code'), Object.keys(raw.questions).join(','));
+
+  // Thresholds re-decide existing answers without issuing another Jev request.
+  await openSheet('signals');
+  await page.click('#btnSettings');
+  await page.waitForSelector('#dlgSettings[open]');
+  const beforeThresholdRaw = await page.textContent('#rawRequest');
+  const expectedFor = () => page.evaluate(() => App.decide(App.STATE.signals, App.STATE.answers, App.STATE.thresholds).target);
+  const sliderTargets = [];
+  for (const value of ['0.5', '2']) {
+    await page.$eval('#thScoreHigh', (element, next) => { element.value = next; element.dispatchEvent(new Event('input', { bubbles: true })); }, value);
+    sliderTargets.push([value, await page.getAttribute('#router', 'data-target'), await expectedFor()]);
+  }
+  const afterThresholdRaw = await page.textContent('#rawRequest');
+  check('threshold slider re-decides live', sliderTargets.every(([, got, expected]) => got === expected) && beforeThresholdRaw === afterThresholdRaw, sliderTargets);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('#dlgSettings')?.open, null, { timeout: 5000 });
+
+  // Toggling a signal is configuration, so it clears scores rather than
+  // applying a stale decision to a changed signal set.
+  await page.$eval('[data-toggle="complexity"]', (element) => { element.checked = false; element.dispatchEvent(new Event('change', { bubbles: true })); });
+  const afterToggle = await page.evaluate(() => ({ phase: App.STATE.phase, decision: App.STATE.decision, answers: Object.keys(App.STATE.answers).length, values: [...document.querySelectorAll('#scoreSignals .score-signal')].map((el) => el.dataset.value) }));
+  check('signal toggle resets scores', afterToggle.phase === 'idle' && afterToggle.decision === null && afterToggle.answers === 0 && afterToggle.values.every((value) => value === ''), afterToggle);
+  await page.$eval('[data-toggle="complexity"]', (element) => { element.checked = true; element.dispatchEvent(new Event('change', { bubbles: true })); });
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.click('#signals [data-del="asks_for_code"]');
+  const afterDelete = await page.evaluate(() => ({ count: document.querySelectorAll('#signals .signal').length, ids: App.STATE.signals.map((signal) => signal.id), phase: App.STATE.phase }));
+  check('CRUD delete signal', afterDelete.count === 4 && !afterDelete.ids.includes('asks_for_code') && afterDelete.phase === 'idle', afterDelete);
+  await closeSheet();
+
+  await page.fill('#prompt', '');
+  await page.click('#btnRoute');
+  const empty = await page.evaluate(() => ({ phase: App.STATE.phase, status: document.querySelector('#status')?.textContent, request: App.STATE.lastRequest }));
+  check('empty prompt stays idle', empty.phase === 'idle' && empty.request === null && empty.status === App.t('emptyPrompt'), empty);
+
+  // Mock-only stale-response test: editing the prompt while Jev is asking
+  // invalidates the request, and the old answer must not commit afterwards.
+  if (MOCK) {
+    const logBefore = await page.evaluate(() => App.STATE.log.length);
+    await page.fill('#prompt', 'First prompt for async invalidation.');
+    await page.evaluate(() => { App.route(); });
+    await page.waitForSelector('body[data-phase="asking"]', { timeout: 5000 });
+    await page.fill('#prompt', 'Second prompt must invalidate the first response.');
+    await page.waitForTimeout(1300);
+    const stale = await page.evaluate(() => ({ phase: App.STATE.phase, decision: App.STATE.decision, answers: Object.keys(App.STATE.answers).length, request: App.STATE.lastRequest, response: App.STATE.lastResponse, log: App.STATE.log.length }));
+    check('prompt edit invalidates async response', stale.phase === 'idle' && stale.decision === null && stale.answers === 0 && stale.request === null && stale.response === null && stale.log === logBefore, stale);
+  } else {
+    check('prompt edit invalidates async response (mock only)', true, 'skipped in --real mode');
+  }
+
+  const importOk = await page.evaluate(() => [
+    App.validSignal({ id: 'x', type: 'score', instructions: 'q' }) === false,
+    App.validSignal({ id: 'x', type: 'score', instructions: 'q', criteria: 'a' }) === false,
+    App.validSignal({ id: 'x', type: 'weird', instructions: 'q' }) === false,
+    App.validSignal({ id: 'x', type: 'noul', instructions: 'q', policy: 'nope' }) === false,
+    App.validSignal({ id: 'x', type: 'noul', instructions: 'q' }) === true,
+    App.validSignal({ id: 'x', type: 'score', instructions: 'q', criteria: ['a', 'b'] }) === true,
+  ].every(Boolean));
+  check('validSignal rejects malformed shapes', importOk);
+
+  check('PL language at start', await page.getAttribute('html', 'lang') === 'pl');
+  await page.click('[data-lang-btn="en"]');
+  check('EN toggle', (await page.textContent('#btnRoute')).includes('Route') && await page.getAttribute('html', 'lang') === 'en');
+  await page.click('[data-lang-btn="pl"]');
+  check('PL toggle', (await page.textContent('#btnRoute')).includes('Routuj') && await page.getAttribute('html', 'lang') === 'pl');
+
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, fullPage: true });
+} catch (error) {
+  check('probe flow completed', false, error.stack || error.message);
+} finally {
+  if (pageErrors.length) check('no page errors', false, pageErrors.map((error) => error.message).join(' | '));
+  else if (page) check('no page errors', true);
+  if (browser) {
+    try { await browser.close(); } catch (error) { check('browser cleanup', false, error.message); }
+  }
+}
+
+const failures = results.filter((result) => !result.ok);
+for (const result of results) console.log(`${result.ok ? 'PASS' : 'FAIL'}  ${result.name}${result.detail ? `  ${result.detail}` : ''}`);
+console.log(`\n${results.length - failures.length}/${results.length} passed`);
+process.exitCode = failures.length ? 1 : 0;

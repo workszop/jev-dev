@@ -78,29 +78,6 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, select:focus-
 .btn svg { width: 16px; height: 16px; }
 kbd { font-family: var(--font-mono); font-size: 11px; background: var(--paper-3); padding: 1px 6px; border-radius: var(--r-xs); color: var(--ink-2); }
 
-/* ─── Layout ─── */
-main { flex: 1; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.25fr) minmax(300px, 1.1fr); gap: 18px; padding: 18px 24px; align-content: start; }
-.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px 18px; box-shadow: var(--shadow-sm); }
-.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.card-head h2 { font-size: 17px; font-weight: 600; }
-footer.bottom { padding: 0 24px 24px; display: grid; gap: 14px; }
-
-/* ─── Prompt column ─── */
-textarea { width: 100%; min-height: 150px; resize: vertical; font: inherit; font-size: 14.5px; line-height: 1.5; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--paper); color: var(--ink); }
-.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.preset { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-md); padding: 10px 12px; transition: background .15s; }
-.preset:hover { background: var(--paper-2); }
-.preset .overline { display: block; margin-bottom: 3px; font-size: 10px; }
-.preset span.desc { font-size: 12.5px; color: var(--ink-2); display: block; line-height: 1.35; }
-.progress { height: 6px; border-radius: var(--r-pill); background: var(--track); overflow: hidden; margin-top: 10px; opacity: 0; transition: opacity .2s; }
-.progress > i { display: block; height: 100%; width: 40%; background: var(--yellow); border-radius: var(--r-pill); animation: slide 1s linear infinite; }
-body[data-phase="asking"] .progress { opacity: 1; }
-@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
-.route-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
-.status-line { font-size: 13px; color: var(--ink-2); flex: 1; min-width: 120px; }
-body[data-phase="error"] .status-line { color: var(--red); }
-
 /* ─── Signals ─── */
 .signals { display: flex; flex-direction: column; gap: 10px; }
 .signal { border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; background: var(--surface); transition: background .25s, border-color .25s; }
@@ -131,40 +108,6 @@ body[data-phase="error"] .status-line { color: var(--red); }
 .signal-foot .policy { margin-left: auto; }
 .signal-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 
-/* ─── Router diagram ─── */
-.router { display: grid; grid-template-columns: 1fr 22px 1fr 22px 1fr; grid-template-rows: auto auto; gap: 8px 0; align-items: center; }
-.node { border: 1px solid var(--line-2); border-radius: var(--r-md); padding: 10px 12px; background: var(--surface); transition: background .3s, color .3s, border-color .3s; min-width: 0; }
-.node .overline { font-size: 10px; display: block; margin-bottom: 2px; color: inherit; opacity: .75; }
-.node .label { font-family: var(--font-display); font-weight: 600; font-size: 14px; }
-.node .sub { font-size: 12px; color: inherit; opacity: .8; }
-.node.is-active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.node.target.is-active { background: var(--yellow); color: var(--yellow-ink); border-color: var(--yellow); }
-.node.jev.is-active { background: var(--blue); color: var(--blue-ink); border-color: var(--blue); }
-.node.target.is-off { opacity: .45; }
-.arrow { height: 2px; background: var(--line-2); position: relative; transition: background .3s; }
-.arrow::after { content: ''; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left-color: var(--line-2); transition: border-color .3s; }
-.arrow.is-active { background: var(--ink); }
-.arrow.is-active::after { border-left-color: var(--ink); }
-.n-prompt { grid-column: 1; grid-row: 1 / span 2; }
-.a1 { grid-column: 2; grid-row: 1 / span 2; }
-.n-jev { grid-column: 3; grid-row: 1; }
-.n-policy { grid-column: 3; grid-row: 2; }
-.a2 { grid-column: 4; grid-row: 1; }
-.a3 { grid-column: 4; grid-row: 2; }
-.n-local { grid-column: 5; grid-row: 1; }
-.n-frontier { grid-column: 5; grid-row: 2; }
-.response { margin-top: 14px; border-radius: var(--r-md); padding: 14px 16px; background: var(--paper-2); display: none; animation: fade .3s ease-out; }
-body[data-phase="decided"] .response { display: block; }
-.response.local { background: var(--green); color: var(--green-ink); }
-.response.frontier { background: var(--blue); color: var(--blue-ink); }
-.response h3 { color: inherit; font-size: 16px; margin-bottom: 4px; }
-.response .model { font-family: var(--font-mono); font-size: 12px; opacity: .85; }
-.response .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
-.response .tags span { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; padding: 3px 9px; border-radius: var(--r-pill); background: var(--paper); color: var(--ink); }
-.response ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
-.response .sim { font-size: 12.5px; opacity: .8; margin-top: 8px; font-style: italic; }
-@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-
 /* ─── Log & raw ─── */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); padding: 6px 8px; border-bottom: 1px solid var(--line); font-weight: 500; }
@@ -192,22 +135,141 @@ input[type="range"] { width: 100%; accent-color: var(--yellow); }
 .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
 .toggle input { accent-color: var(--yellow); }
 
-/* ─── Responsive ─── */
-@media (max-width: 1100px) { main { grid-template-columns: 1fr 1fr; } .col.right { grid-column: 1 / -1; } }
-@media (max-width: 768px) {
-  main { grid-template-columns: 1fr; padding: 14px 16px; }
-  .col.right { grid-column: auto; }
-  footer.bottom { padding: 0 16px 16px; }
-  .edu-header-inner { padding: 6px 16px; }
-  .header-title { display: none; }
-  .raw-grid { grid-template-columns: 1fr; }
-  .router { grid-template-columns: 1fr 14px 1fr 14px 1fr; }
-  .node { padding: 8px; }
-  .node .sub { display: none; }
+
+/* ─── Flow workspace ─── */
+:root {
+  --stage-title:clamp(21px,1.8vw,29px); --stage-body:14px; --stage-caption:12px;
+  --mobile-model-title:21px; --mobile-model-overline:10px; --mobile-wordmark:20px;
+  --stage-align:left; --canvas-pad:clamp(20px,2.3vw,40px); --flow-gap:clamp(28px,2.8vw,52px);
+  --editor-muted:#C6C1B9; --wire-idle:var(--line-2); --wire-active:var(--ink);
+  --glass-line:rgba(255,255,255,.23); --glass-track:rgba(255,255,255,.2);
+  --glass-muted:rgba(255,255,255,.82); --sheet-backdrop:rgba(28,25,23,.24);
 }
+[hidden] { display:none!important; }
+html,body { height:auto; min-height:100%; }
+body { text-align:var(--stage-align); }
+.edu-header { position:static; background:var(--paper); backdrop-filter:none; }
+.edu-header-inner { padding:8px var(--canvas-pad); }
+.edu-logo { width:46px; height:46px; }
+#btnTools { border-radius:var(--r-sm); }
+main { flex:1; padding:var(--canvas-pad); }
+.router { position:relative; display:grid; grid-template-columns:minmax(260px,1.12fr) minmax(210px,.95fr) minmax(240px,1.08fr) minmax(185px,.8fr); gap:var(--flow-gap); min-height:clamp(570px,calc(100svh - 175px),900px); align-items:stretch; }
+.flow-stage { position:relative; z-index:1; display:flex; flex-direction:column; min-width:0; padding:25px; border-radius:var(--r-lg); }
+.stage-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:40px; }
+.stage-heading h2 { font-size:var(--stage-title); line-height:1.15; color:inherit; }
+.stage-meta { font-size:var(--stage-caption); line-height:1.45; color:inherit; opacity:.8; }
+.stage-count { font-family:var(--font-mono); font-size:var(--stage-caption); padding:3px 8px; border:1px solid var(--glass-line); border-radius:var(--r-xs); }
+.stage-lead { color:inherit; opacity:.8; font-size:var(--stage-body); line-height:1.6; margin:14px 0 23px; }
+.stage-bottom { display:flex; flex-direction:column; align-items:flex-start; gap:14px; margin-top:auto; padding-top:24px; }
+.text-action { background:transparent; border:0; padding:0; color:inherit; font-size:var(--stage-caption); text-align:var(--stage-align); text-decoration:underline; text-underline-offset:4px; cursor:pointer; }
+.text-action:disabled { opacity:.5; cursor:default; text-decoration:none; }
+.prompt-stage,.policy-stage { color:var(--paper); background:var(--ink); }
+.prompt-stage textarea { flex:1; width:100%; min-height:270px; padding:0; margin:24px 0; border:0; border-radius:0; background:transparent; color:var(--paper); resize:none; font:inherit; font-size:var(--body); line-height:1.75; }
+.prompt-stage textarea::placeholder { color:var(--editor-muted); opacity:1; }
+.prompt-stage textarea:focus-visible { outline:1px solid var(--yellow); outline-offset:9px; box-shadow:none; border-radius:var(--r-xs); }
+.route-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.route-row .primary { box-shadow:none; margin-right:auto; }
+.shortcut { white-space:nowrap; }
+.prompt-stage kbd { background:var(--dark-line); color:var(--editor-muted); }
+.status-line { color:var(--editor-muted); font-size:var(--stage-caption); min-height:38px; margin-top:15px; line-height:1.5; }
+.prompt-stage .text-action { align-self:flex-start; margin-top:15px; color:var(--editor-muted); }
+.progress { height:5px; border-radius:var(--r-pill); background:var(--dark-line); overflow:hidden; opacity:0; }
+.progress > i { display:block; height:100%; width:40%; background:var(--yellow); animation:slide 1s linear infinite; }
+body[data-phase="asking"] .progress { opacity:1; }
+@keyframes slide { from { transform:translateX(-100%); } to { transform:translateX(260%); } }
+.policy-signals { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0; }
+.policy-signal { padding:17px 0; border-top:1px solid var(--glass-line); }
+.policy-signal strong { display:block; font-size:var(--stage-body); font-weight:500; line-height:1.45; }
+.policy-signal span { display:block; margin-top:6px; font-size:var(--stage-caption); color:var(--editor-muted); }
+.score-stage { background:var(--blue); color:var(--paper); }
+.score-signals { display:grid; gap:22px; }
+.score-signal { min-width:0; }
+.score-heading { display:flex; justify-content:space-between; align-items:start; gap:10px; font-size:var(--stage-body); line-height:1.4; }
+.score-heading span { flex:1; }
+.score-heading output { font-family:var(--font-mono); font-size:var(--stage-caption); white-space:nowrap; }
+.score-track { margin:10px 0 7px; height:10px; background:var(--glass-track); border-radius:var(--r-pill); overflow:hidden; }
+.score-fill { display:block; height:100%; background:var(--paper); width:0; border-radius:inherit; }
+.score-signal[data-state="fire"] .score-fill { background:var(--yellow); }
+.score-foot { display:flex; gap:10px; justify-content:space-between; color:var(--glass-muted); font-size:var(--stage-caption); line-height:1.4; }
+.selection-stage { padding:0; gap:18px; color:var(--ink); }
+.selection-stage .stage-heading { padding:0 4px; }
+.model-targets { display:grid; grid-template-rows:1fr 1fr; gap:18px; flex:1; }
+.model-card { background:var(--paper-2); border:1px solid var(--line-2); border-radius:var(--r-lg); padding:24px; display:flex; flex-direction:column; justify-content:center; min-width:0; min-height:180px; }
+.model-card h3 { font-size:var(--stage-title); line-height:1.2; margin:9px 0 12px; overflow-wrap:anywhere; }
+.model-name { font-size:var(--stage-caption); overflow-wrap:anywhere; }
+.model-note { font-size:var(--stage-caption); margin-top:22px; color:var(--ink-2); }
+.model-card[data-selected="true"] { background:var(--yellow); border-color:var(--yellow); }
+.model-card.is-off { opacity:.5; }
+.selection-mark { font-size:var(--stage-caption); font-weight:600; margin-top:12px; }
+.selection-mark::before { content:'✓ '; }
+.selection-stage .text-action { min-height:28px; }
+.flow-wires { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:0; }
+.flow-wire { fill:none; stroke:var(--wire-idle); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; marker-end:url(#wireTip); }
+.flow-wire.is-active { stroke:var(--wire-active); }
+#wireTip path { fill:context-stroke; }
+.canvas-foot { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; color:var(--ink-2); font-size:var(--stage-caption); margin-top:22px; }
+.canvas-foot span:last-child { max-width:50%; text-align:right; }
+
+/* ─── Supporting side sheet ─── */
+#sideSheet { position:fixed; inset:14px 14px 14px auto; width:min(660px,calc(100vw - 28px)); height:calc(100dvh - 28px); max-width:none; max-height:none; margin:0; padding:26px; border-radius:var(--r-lg); overflow-y:auto; }
+#sideSheet::backdrop { background:var(--sheet-backdrop); }
+.sheet-heading { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:24px; }
+.sheet-heading h2 { font-size:var(--stage-title); }
+.sheet-items { display:grid; gap:12px; }
+.sheet-items > details { border:1px solid var(--line); border-radius:var(--r-md); overflow:hidden; }
+.sheet-items > details > summary { padding:16px 18px; cursor:pointer; font-weight:500; }
+.card { background:var(--surface); padding:4px 18px 20px; min-width:0; overflow-x:auto; }
+.card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.sheet-lead { margin:0 0 14px; font-size:var(--body-sm); }
+.sheet-settings { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:24px; padding-top:20px; border-top:1px solid var(--line); }
+.presets { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.preset { text-align:left; padding:12px; border:1px solid var(--line); border-radius:var(--r-sm); background:var(--paper); }
+.preset:hover { background:var(--paper-2); }
+.preset .overline { display:block; font-size:var(--overline); margin-bottom:5px; }
+.preset .desc { display:block; color:var(--ink-2); font-size:var(--stage-caption); }
+.response { border-radius:var(--r-md); padding:16px; background:var(--paper-2); display:none; }
+body[data-phase="decided"] .response { display:block; }
+.response.local { background:var(--green); color:var(--paper); }
+.response.frontier { background:var(--blue); color:var(--paper); }
+.response h3 { color:inherit; font-size:var(--body); }
+.response .model,.response .sim { font-size:var(--stage-caption); margin-top:8px; }
+.response .tags { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
+.response .tags span { background:var(--paper); color:var(--ink); font-size:var(--overline); padding:3px 8px; border-radius:var(--r-pill); }
+.response ul { padding-left:18px; font-size:var(--body-sm); }
+.raw-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+#verificationResults { padding-left:20px; font-size:var(--stage-caption); }
+
+/* ─── Responsive ─── */
+@media(min-width:1101px) and (max-width:1400px) {
+  :root { --canvas-pad:22px; --flow-gap:26px; --stage-title:23px; }
+  .router { grid-template-columns:minmax(235px,1.1fr) minmax(185px,.95fr) minmax(205px,1.08fr) minmax(165px,.8fr); }
+  .flow-stage { padding:20px; } .selection-stage { padding:0; } .model-card { padding:20px; }
+  .score-heading { font-size:var(--body-sm); } .score-heading output { font-size:var(--overline); }
+}
+@media(min-width:769px) and (max-width:1100px) {
+  .router { grid-template-columns:minmax(250px,1fr) minmax(310px,1.1fr); gap:36px; }
+  .prompt-stage { grid-column:1; grid-row:1/3; }
+  .policy-stage { grid-column:2; grid-row:1; }
+  .score-stage { grid-column:2; grid-row:2; }
+  .selection-stage { grid-column:1/3; grid-row:3; }
+  .model-targets { grid-template-columns:1fr 1fr; grid-template-rows:1fr; }
+}
+@media(max-width:768px) {
+  :root { --canvas-pad:16px; --stage-title:25px; }
+  .edu-header-inner { gap:8px; } .edu-wordmark { font-size:var(--mobile-wordmark); } .header-title { display:none; }
+  .edu-logo { width:38px; height:38px; } #mockBadge { display:none!important; }
+  .router { display:grid; grid-template-columns:minmax(0,1fr); gap:36px; min-height:0; }
+  .flow-stage { padding:24px; } .prompt-stage { min-height:460px; } .prompt-stage textarea { min-height:200px; }
+  .selection-stage { padding:0; } .model-targets { grid-template-columns:1fr 1fr; grid-template-rows:1fr; gap:12px; }
+  .model-card { padding:18px; } .model-card h3 { font-size:var(--mobile-model-title); } .model-card .overline { font-size:var(--mobile-model-overline); }
+  .canvas-foot { gap:12px; } .canvas-foot span:last-child { max-width:none; text-align:var(--stage-align); }
+  #sideSheet { padding:20px; } .presets { grid-template-columns:1fr; } .two { grid-template-columns:1fr; }
+}
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+@media(max-width:380px) { .edu-wordmark { display:none; } }
 </style>
 </head>
-<body class="edu" data-phase="idle" data-mock="false" data-lang="pl">
+<body class="edu" data-phase="idle" data-mock="false" data-lang="pl" data-contract-version="2" data-sheet="closed">
 
 <header class="edu-header">
   <div class="edu-header-inner">
@@ -216,7 +278,7 @@ input[type="range"] { width: 100%; accent-color: var(--yellow); }
     <span class="header-title" data-t="appTitle">Jev Router</span>
     <span class="header-spacer"></span>
     <span id="mockBadge" class="chip sand hidden" data-t="mockBadge">mock</span>
-    <button class="btn icon" id="btnSettings" data-t-title="settings" title="Settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <button class="btn" id="btnTools" type="button" data-t="tools" aria-haspopup="dialog" aria-controls="sideSheet" aria-expanded="false">Szczegóły</button>
     <div class="edu-seg" role="group" aria-label="Language">
       <button data-lang-btn="pl" class="active">PL</button>
       <button data-lang-btn="en">EN</button>
@@ -225,76 +287,52 @@ input[type="range"] { width: 100%; accent-color: var(--yellow); }
 </header>
 
 <main>
-  <!-- ─── Left: prompt ─── -->
-  <section class="col left">
-    <div class="card">
-      <div class="card-head"><h2 data-t="promptTitle">Prompt użytkownika</h2><span class="chip ink">1</span></div>
-      <textarea id="prompt" data-t-placeholder="promptPlaceholder" placeholder="Wpisz prompt..."></textarea>
-      <div class="route-row">
-        <button class="btn primary" id="btnRoute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-t="route">Routuj</span></button>
-        <kbd>Ctrl</kbd><kbd>Enter</kbd>
-        <span class="status-line" id="status" role="status" aria-live="polite"></span>
-      </div>
+  <div class="router" id="router" data-target="none" aria-label="Router">
+    <svg class="flow-wires" aria-hidden="true"><defs><marker id="wireTip" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z"/></marker></defs><path id="a1" class="flow-wire"/><path id="aDecision" class="flow-wire"/><path id="a2" class="flow-wire"/></svg>
+    <section class="flow-stage prompt-stage" id="nPrompt" data-stage="prompt" aria-labelledby="promptTitle">
+      <div class="stage-heading"><h2 id="promptTitle"><label for="prompt" data-t="nPrompt">Prompt</label></h2><span class="mono stage-meta" id="nPromptSub">0 tok</span></div>
+      <textarea id="prompt" data-t-placeholder="promptPlaceholder" placeholder="Wpisz prompt, który trafiłby do asystenta AI..."></textarea>
+      <div class="route-row"><button class="btn primary" id="btnRoute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-t="route">Routuj</span></button><span class="shortcut"><kbd>Ctrl</kbd> <kbd>Enter</kbd></span></div>
+      <span class="status-line" id="status" role="status" aria-live="polite"></span>
       <div class="progress" aria-hidden="true"><i></i></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><h2 data-t="presetsTitle">Przykłady</h2></div>
-      <div class="presets" id="presets"></div>
-    </div>
-  </section>
-
-  <!-- ─── Middle: signals ─── -->
-  <section class="col middle">
-    <div class="card">
-      <div class="card-head"><h2 data-t="signalsTitle">Sygnały (pytania do Jev)</h2><span class="chip ink">2</span></div>
-      <p class="muted" style="font-size:13px;margin-bottom:12px" data-t="signalsLead">Każdy sygnał to jedno typowane pytanie. Wszystkie idą do Jev w jednym żądaniu.</p>
-      <div class="signals" id="signals"></div>
-      <div class="signal-tools">
-        <button class="btn small" id="btnAddSignal">+ <span data-t="addSignal">Dodaj sygnał</span></button>
-        <button class="btn small" id="btnExport" data-t="exportSignals">Eksport JSON</button>
-        <button class="btn small" id="btnImport" data-t="importSignals">Import JSON</button>
-        <input type="file" id="importFile" accept="application/json" class="hidden">
+      <button class="text-action" type="button" data-open-panel="examples" data-t="tryExample">Wypróbuj przykład</button>
+    </section>
+    <section class="flow-stage policy-stage" id="nPolicy" data-stage="policy" aria-labelledby="policyTitle">
+      <div class="stage-heading"><h2 id="policyTitle" data-t="nPolicy">Polityka</h2><span class="stage-count" id="policyCount">4</span></div>
+      <p class="stage-lead" data-t="policyLead">Sygnały i reguły, które kierują prompt do właściwego modelu.</p>
+      <ul class="policy-signals" id="policySignals"></ul>
+      <div class="stage-bottom"><span class="stage-meta" id="nPolicySub"></span><button type="button" class="text-action" data-open-panel="signals" data-t="manageSignals">Edytuj sygnały</button></div>
+    </section>
+    <section class="flow-stage score-stage" id="nJev" data-stage="jev" aria-labelledby="jevTitle">
+      <div class="stage-heading"><h2 id="jevTitle">Jev Router</h2><span class="stage-meta">TypeSafe</span></div>
+      <p class="stage-lead" id="nJevSub"></p>
+      <div class="score-signals" id="scoreSignals"></div>
+      <div class="stage-bottom"><span class="stage-meta" id="scoreStatus" data-t="waitingScores">Wyniki pojawią się po routowaniu.</span><button type="button" class="text-action" data-open-panel="raw" data-t="inspectRequest">Zobacz żądanie</button></div>
+    </section>
+    <section class="flow-stage selection-stage" id="modelSelection" data-stage="models" aria-labelledby="modelsTitle">
+      <div class="stage-heading"><h2 id="modelsTitle" data-t="modelSelection">Wybór modelu</h2></div>
+      <div class="model-targets">
+        <div class="model-card" id="nLocal" data-model="local" data-selected="false"><span class="overline" data-t="nLocalOver">lokalnie</span><h3 data-t="nLocal">Mały model</h3><span class="mono model-name">gemma4:12b</span><span class="model-note" data-t="localNote">Dane zostają w firmie</span><span class="selection-mark" data-t="selectedModel" hidden>Wybrany</span></div>
+        <div class="model-card" id="nFrontier" data-model="frontier" data-selected="false"><span class="overline" data-t="nFrontierOver">zewnętrznie</span><h3 data-t="nFrontier">Model frontier</h3><span class="mono model-name">gpt-5.6-luna</span><span class="model-note" data-t="frontierNote">Zewnętrzny model</span><span class="selection-mark" data-t="selectedModel" hidden>Wybrany</span></div>
       </div>
-    </div>
-  </section>
-
-  <!-- ─── Right: router ─── -->
-  <section class="col right">
-    <div class="card">
-      <div class="card-head"><h2 data-t="routerTitle">Decyzja routera</h2><span class="chip ink">3</span></div>
-      <div class="router" id="router" data-target="none">
-        <div class="node n-prompt" id="nPrompt"><span class="overline" data-t="nPromptOver">wejście</span><div class="label" data-t="nPrompt">Prompt</div><div class="sub mono" id="nPromptSub">0 tok</div></div>
-        <div class="arrow a1" id="a1"></div>
-        <div class="node jev n-jev" id="nJev"><span class="overline">TypeSafe</span><div class="label">Jev</div><div class="sub" id="nJevSub"></div></div>
-        <div class="node n-policy" id="nPolicy"><span class="overline" data-t="nPolicyOver">twój kod</span><div class="label" data-t="nPolicy">Polityka</div><div class="sub" id="nPolicySub"></div></div>
-        <div class="arrow a2" id="a2"></div>
-        <div class="arrow a3" id="a3"></div>
-        <div class="node target n-local" id="nLocal"><span class="overline" data-t="nLocalOver">lokalnie</span><div class="label" data-t="nLocal">Mały model</div><div class="sub mono">gemma4:12b</div></div>
-        <div class="node target n-frontier" id="nFrontier"><span class="overline" data-t="nFrontierOver">zewnętrznie</span><div class="label" data-t="nFrontier">Model frontier</div><div class="sub mono">gpt-5.6-luna</div></div>
-      </div>
-      <div class="response" id="response"></div>
-    </div>
-  </section>
+      <button type="button" class="text-action" id="whyModel" data-open-panel="explanation" data-t="whyModel" disabled>Dlaczego ten model?</button>
+    </section>
+  </div>
+  <div class="canvas-foot"><span id="routeSummary" data-t="flowHint">Prompt → polityka → ocena sygnałów → wybór modelu</span><span data-t="selectionOnly">Wybór modelu jest demonstracją. Prompt nie trafia do modelu docelowego.</span></div>
 </main>
 
-<footer class="bottom">
-  <div class="card">
-    <div class="card-head"><h2 data-t="logTitle">Dziennik decyzji</h2><button class="btn small" id="btnClearLog" data-t="clearLog">Wyczyść</button></div>
-    <table>
-      <thead><tr><th data-t="thTime">Czas</th><th data-t="thPrompt">Prompt</th><th data-t="thTarget">Cel</th><th data-t="thFired">Sygnały</th><th data-t="thTokens">Tokeny</th></tr></thead>
-      <tbody id="log"></tbody>
-    </table>
+<dialog id="sideSheet" aria-labelledby="sheetTitle">
+  <div class="sheet-heading"><h2 id="sheetTitle" data-t="toolsTitle">Narzędzia i szczegóły</h2><button class="btn small" id="btnCloseSheet" type="button" data-t="close" autofocus>Zamknij</button></div>
+  <div class="sheet-items">
+    <details data-panel="examples"><summary data-t="presetsTitle">Przykłady</summary><div class="card"><div class="presets" id="presets"></div></div></details>
+    <details data-panel="signals"><summary data-t="signalsTitle">Sygnały (pytania do Jev)</summary><div class="card"><p class="sheet-lead" data-t="signalsLead"></p><div class="signals" id="signals"></div><div class="signal-tools"><button class="btn small" id="btnAddSignal">+ <span data-t="addSignal">Dodaj sygnał</span></button><button class="btn small" id="btnExport" data-t="exportSignals">Eksport JSON</button><button class="btn small" id="btnImport" data-t="importSignals">Import JSON</button><input type="file" id="importFile" accept="application/json" class="hidden"></div></div></details>
+    <details data-panel="explanation"><summary data-t="decisionExplanation">Uzasadnienie decyzji</summary><div class="card"><p id="emptyExplanation" data-t="waitingDecision">Routuj prompt, aby zobaczyć uzasadnienie.</p><div class="response" id="response"></div></div></details>
+    <details data-panel="history"><summary data-t="logTitle">Dziennik decyzji</summary><div class="card"><div class="card-head"><button class="btn small" id="btnClearLog" data-t="clearLog">Wyczyść</button></div><table><thead><tr><th data-t="thTime">Czas</th><th data-t="thPrompt">Prompt</th><th data-t="thTarget">Cel</th><th data-t="thFired">Sygnały</th><th data-t="thTokens">Tokeny</th></tr></thead><tbody id="log"></tbody></table></div></details>
+    <details id="rawDetails" data-panel="raw"><summary data-t="rawTitle">Surowe żądanie i odpowiedź Jev</summary><div class="card raw-grid"><div><span class="overline" data-t="rawReq">żądanie</span><pre id="rawRequest">{}</pre></div><div><span class="overline" data-t="rawRes">odpowiedź</span><pre id="rawResponse">{}</pre></div></div></details>
+    <details data-panel="verification"><summary data-t="verificationTitle">Kontrola interfejsu</summary><div class="card"><p data-t="keyboardHelp">Ctrl + Enter: routuj. 1–6: przykłady. Escape: zamknij panel.</p><ul id="verificationResults"></ul></div></details>
   </div>
-  <div class="card">
-    <details id="rawDetails">
-      <summary data-t="rawTitle">Surowe żądanie i odpowiedź Jev</summary>
-      <div class="raw-grid">
-        <div><span class="overline" data-t="rawReq">żądanie</span><pre id="rawRequest">{}</pre></div>
-        <div><span class="overline" data-t="rawRes">odpowiedź</span><pre id="rawResponse">{}</pre></div>
-      </div>
-    </details>
-  </div>
-</footer>
+  <div class="sheet-settings"><span data-t="settings">Ustawienia</span><button class="btn small" id="btnSettings" type="button" data-t="openSettings">Otwórz ustawienia</button></div>
+</dialog>
 
 <!-- ─── Settings dialog ─── -->
 <dialog id="dlgSettings">
@@ -323,7 +361,7 @@ input[type="range"] { width: 100%; accent-color: var(--yellow); }
     </div>
     <div class="dlg-actions">
       <button type="button" class="btn small danger" id="btnResetSignals" data-t="resetSignals">Przywróć domyślne sygnały</button>
-      <button type="submit" class="btn primary" data-t="close">Zamknij</button>
+      <button type="submit" formnovalidate class="btn primary" data-t="close">Zamknij</button>
     </div>
   </form>
 </dialog>
@@ -412,6 +450,14 @@ const PRESETS = [
 // ─── i18n ───
 const T = {
   pl: {
+    tools: 'Szczegóły', toolsTitle: 'Narzędzia i szczegóły', openSettings: 'Otwórz ustawienia',
+    tryExample: 'Wypróbuj przykład', policyLead: 'Sygnały i reguły, które kierują prompt do właściwego modelu.', manageSignals: 'Edytuj sygnały',
+    policyPriority: 'Blokada lokalna ma pierwszeństwo przed głosami.', oneRequest: 'jedno żądanie', waitingScores: 'Wyniki pojawią się po routowaniu.', scoresReady: 'Ocena sygnałów zakończona.',
+    inspectRequest: 'Zobacz żądanie', yesProbability: 'Prawdopodobieństwo TAK', signalScore: 'Wynik sygnału', modelSelection: 'Wybór modelu',
+    localNote: 'Dane zostają w firmie', frontierNote: 'Zewnętrzny model', selectedModel: 'Wybrany', whyModel: 'Dlaczego ten model?', decisionExplanation: 'Uzasadnienie decyzji',
+    waitingDecision: 'Routuj prompt, aby zobaczyć uzasadnienie.', flowHint: 'Prompt → polityka → ocena sygnałów → wybór modelu', selectionOnly: 'Wybór modelu jest demonstracją. Prompt nie trafia do modelu docelowego.',
+    verificationTitle: 'Kontrola interfejsu', keyboardHelp: 'Ctrl + Enter: routuj. 1–6: przykłady. Escape: zamknij panel.',
+    check_onePrompt: 'Jeden zintegrowany prompt', check_stageOrder: 'Kolejność czterech etapów', check_signalSync: 'Spójne listy sygnałów i wyników', check_sideSheet: 'Natywny panel boczny', check_modelSelection: 'Wybór dokładnie jednego modelu po decyzji', check_geometry: 'Etapy mieszczą się na planszy', check_noOverflow: 'Brak przewijania poziomego',
     appTitle: 'Jev Router', mockBadge: 'mock', settings: 'Ustawienia', promptTitle: 'Prompt użytkownika', promptPlaceholder: 'Wpisz prompt, który trafiłby do asystenta AI...',
     route: 'Routuj', presetsTitle: 'Przykłady', signalsTitle: 'Sygnały (pytania do Jev)', signalsLead: 'Każdy sygnał to jedno typowane pytanie. Wszystkie idą do Jev w jednym żądaniu, a polityka w kodzie podejmuje decyzję.',
     addSignal: 'Dodaj sygnał', editSignal: 'Edytuj sygnał', exportSignals: 'Eksport JSON', importSignals: 'Import JSON', routerTitle: 'Decyzja routera',
@@ -429,6 +475,14 @@ const T = {
     confirmDelete: 'Usunąć ten sygnał?', importBad: 'Nieprawidłowy plik JSON.',
   },
   en: {
+    tools: 'Details', toolsTitle: 'Tools & details', openSettings: 'Open settings',
+    tryExample: 'Try an example', policyLead: 'Signals and rules that direct the prompt to the right model.', manageSignals: 'Edit signals',
+    policyPriority: 'Local locks take priority over votes.', oneRequest: 'one request', waitingScores: 'Route a prompt to see the scores.', scoresReady: 'Signal evaluation complete.',
+    inspectRequest: 'Inspect request', yesProbability: 'YES probability', signalScore: 'Signal score', modelSelection: 'Model selection',
+    localNote: 'Data stays in-house', frontierNote: 'External model', selectedModel: 'Selected', whyModel: 'Why this model?', decisionExplanation: 'Decision explanation',
+    waitingDecision: 'Route a prompt to see its explanation.', flowHint: 'Prompt → policy → signal evaluation → model selection', selectionOnly: 'Model selection is a demonstration. No prompt is sent to the selected model.',
+    verificationTitle: 'Interface checks', keyboardHelp: 'Ctrl + Enter: route. 1–6: examples. Escape: close sheet.',
+    check_onePrompt: 'One integrated prompt', check_stageOrder: 'Four stages in order', check_signalSync: 'Matching policy and score signals', check_sideSheet: 'Native side sheet', check_modelSelection: 'Exactly one selected model after a decision', check_geometry: 'Stages fit the canvas', check_noOverflow: 'No horizontal overflow',
     appTitle: 'Jev Router', mockBadge: 'mock', settings: 'Settings', promptTitle: 'User prompt', promptPlaceholder: 'Type a prompt that would go to an AI assistant...',
     route: 'Route', presetsTitle: 'Examples', signalsTitle: 'Signals (questions for Jev)', signalsLead: 'Each signal is one typed question. All of them go to Jev in a single request, and the policy in code makes the decision.',
     addSignal: 'Add signal', editSignal: 'Edit signal', exportSignals: 'Export JSON', importSignals: 'Import JSON', routerTitle: 'Router decision',
@@ -452,7 +506,7 @@ const t = (key) => (T[STATE.lang] && T[STATE.lang][key]) || T.en[key] || key;
 const STATE = {
   lang: 'pl', workerUrl: '', mock: true,
   signals: [], thresholds: { ...DEFAULT_THRESHOLDS },
-  phase: 'idle', answers: {}, decision: null, lastRequest: null, lastResponse: null, log: [],
+  phase: 'idle', requestId: 0, answers: {}, decision: null, lastRequest: null, lastResponse: null, log: [],
 };
 
 // ─── DOM refs ───
@@ -461,10 +515,13 @@ const promptEl = $('#prompt'), btnRoute = $('#btnRoute'), statusEl = $('#status'
 const signalsEl = $('#signals'), routerEl = $('#router'), responseEl = $('#response'), logEl = $('#log');
 const rawReqEl = $('#rawRequest'), rawResEl = $('#rawResponse'), mockBadge = $('#mockBadge');
 const dlgSettings = $('#dlgSettings'), dlgSignal = $('#dlgSignal'), signalForm = $('#signalForm');
+const policySignalsEl = $('#policySignals'), scoreSignalsEl = $('#scoreSignals'), sideSheetEl = $('#sideSheet');
 
 // ─── Helpers: persistence ───
 function loadJSON(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
 function saveJSON(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
+function readStorage(key) { try { return localStorage.getItem(key); } catch { return null; } }
+function writeStorage(key, value) { try { localStorage.setItem(key, value); } catch {} }
 function persistSignals() { saveJSON(LS.signals, STATE.signals); }
 function persistThresholds() { saveJSON(LS.thresholds, STATE.thresholds); }
 
@@ -477,7 +534,8 @@ function signalState(signal, answer, th) {
     if (p <= th.noulNo) return 'clear';
     return 'uncertain';
   }
-  if (answer.confidence < th.minConfidence) return 'uncertain';
+  if (typeof answer.score !== 'number') return 'uncertain';
+  if (typeof answer.confidence === 'number' && answer.confidence < th.minConfidence) return 'uncertain';
   return answer.score >= th.scoreHigh ? 'fire' : 'clear';
 }
 
@@ -585,7 +643,7 @@ function slug(str) { return str.toLowerCase().normalize('NFD').replace(/[^a-z0-9
 function policyLabel(p) { return t({ lock_local: 'pLockLocal', lock_frontier: 'pLockFrontier', soft_frontier: 'pSoftFrontier', soft_local: 'pSoftLocal' }[p] || p); }
 function reasonText(r) {
   const sig = STATE.signals.find((s) => s.id === r.id);
-  const who = sig ? nameOf(sig) : '';
+  const who = sig ? nameOf(sig) : r.id || '?';
   if (r.key === 'rDefault' || r.key === 'rNoQuestions') return t(r.key);
   return `${who}: ${t(r.key)} → ${t(r.to)}`;
 }
@@ -621,14 +679,14 @@ function renderSignals() {
       foot = `<span>p(yes) = <span class="value">${a ? fmt(p) : '–'}</span></span>`;
     } else {
       const levels = s.criteria || [];
-      const probs = a ? a.probabilities : {};
+      const probs = (a && a.probabilities) || {};
       body = `<div class="gauge"><div class="gauge-track">${levels.map((_, i) => `<i><s style="transform:scaleX(${probs[i] || 0})"></s></i>`).join('')}</div>
         <div class="gauge-legend">${levels.map((l, i) => `<span title="${esc(l)}">${i} · ${esc(String(l).split(':')[0])}</span>`).join('')}</div></div>`;
       foot = `<span>score = <span class="value">${a ? fmt(a.score) : '–'}</span></span><span>conf = <span class="value">${a ? fmt(a.confidence) : '–'}</span></span>`;
     }
     const val = a ? (s.type === 'noul' ? a.noul : a.score) : '';
     const conf = a && a.confidence !== undefined ? a.confidence : '';
-    return `<article class="signal" data-id="${esc(s.id)}" data-type="${s.type}" data-policy="${s.policy}" data-state="${state}" data-value="${val}" data-confidence="${conf}" data-enabled="${s.enabled}">
+    return `<article class="signal" data-id="${esc(s.id)}" data-type="${esc(s.type)}" data-policy="${esc(s.policy)}" data-state="${state}" data-value="${val}" data-confidence="${conf}" data-enabled="${s.enabled}">
       <div class="signal-head">
         <label class="toggle" title="on/off"><input type="checkbox" data-toggle="${esc(s.id)}" ${s.enabled ? 'checked' : ''}></label>
         <span class="signal-name">${esc(nameOf(s))}</span>
@@ -643,29 +701,123 @@ function renderSignals() {
       <div class="signal-foot">${foot}<span class="policy chip sand" style="font-size:10px">${esc(policyLabel(s.policy))}</span></div>
     </article>`;
   }).join('');
+  renderFlowSignals();
+}
+
+function renderFlowSignals() {
+  const enabled = STATE.signals.filter((s) => s.enabled);
+  policySignalsEl.replaceChildren(...enabled.map((s) => {
+    const row = document.createElement('li'); row.className = 'policy-signal'; row.dataset.id = s.id;
+    const name = document.createElement('strong'); name.textContent = nameOf(s);
+    const rule = document.createElement('span'); rule.textContent = policyLabel(s.policy);
+    row.append(name, rule); return row;
+  }));
+  scoreSignalsEl.replaceChildren(...enabled.map((s) => {
+    const answer = STATE.answers[s.id], state = signalState(s, answer, STATE.thresholds);
+    const max = s.type === 'noul' ? 1 : Math.max(1, (s.criteria || []).length - 1);
+    const value = answer ? (s.type === 'noul' ? answer.noul : answer.score) : null;
+    const hasValue = Number.isFinite(value), normalized = hasValue ? Math.max(0, Math.min(1, value / max)) : 0;
+    const row = document.createElement('article'); row.className = 'score-signal'; row.dataset.id = s.id; row.dataset.state = state; row.dataset.value = hasValue ? value : '';
+    const heading = document.createElement('div'); heading.className = 'score-heading';
+    const name = document.createElement('span'); name.textContent = nameOf(s);
+    const output = document.createElement('output'); output.textContent = !hasValue ? '–' : s.type === 'noul' ? `${Math.round(value * 100)}%` : `${fmt(value)} / ${max}`;
+    heading.append(name, output);
+    const track = document.createElement('div'); track.className = 'score-track'; track.setAttribute('role', 'meter');
+    track.setAttribute('aria-label', nameOf(s)); track.setAttribute('aria-valuemin', '0'); track.setAttribute('aria-valuemax', String(max)); track.setAttribute('aria-valuenow', String(hasValue ? Math.max(0, Math.min(max, value)) : 0));
+    track.setAttribute('aria-valuetext', hasValue ? output.textContent : t('waitingScores'));
+    const fill = document.createElement('i'); fill.className = 'score-fill'; fill.style.width = `${normalized * 100}%`; track.append(fill);
+    const foot = document.createElement('div'); foot.className = 'score-foot';
+    const metric = document.createElement('span'); metric.textContent = s.type === 'noul' ? t('yesProbability') : t('signalScore');
+    const stateLabel = document.createElement('span'); stateLabel.textContent = t('st' + state[0].toUpperCase() + state.slice(1)); foot.append(metric, stateLabel);
+    row.append(heading, track, foot); return row;
+  }));
+  $('#policyCount').textContent = `${enabled.length}/${STATE.signals.length}`;
+  for (const container of [policySignalsEl, scoreSignalsEl]) {
+    if (!enabled.length) { const note = document.createElement('p'); note.className = 'stage-meta'; note.textContent = t('rNoQuestions'); container.append(note); }
+  }
+  requestAnimationFrame(drawConnections);
 }
 
 function renderRouter() {
   const d = STATE.decision, phase = STATE.phase;
   const n = STATE.signals.filter((s) => s.enabled).length;
   routerEl.dataset.target = d ? d.target : 'none';
-  $('#nJevSub').textContent = `1 req · ${n} ${t('questions')}`;
+  $('#nJevSub').textContent = `${n} ${t('questions')} · ${t('oneRequest')}`;
   const tokens = STATE.lastResponse && STATE.lastResponse.usage ? STATE.lastResponse.usage.input_tokens : 0;
   $('#nPromptSub').textContent = `${tokens} ${t('tokens')}`;
-  $('#nPolicySub').textContent = d ? `${d.locks.length} ${t('rLock')} · ${d.votes.length} ${t('rVote')}` : '';
+  $('#nPolicySub').textContent = d ? `${d.locks.length} ${t('rLock')} · ${d.votes.length} ${t('rVote')}` : t('policyPriority');
   const active = phase === 'asking' || phase === 'decided';
-  $('#nPrompt').classList.toggle('is-active', active);
   $('#a1').classList.toggle('is-active', active);
-  $('#nJev').classList.toggle('is-active', active);
-  $('#nPolicy').classList.toggle('is-active', phase === 'decided');
-  $('#a2').classList.toggle('is-active', phase === 'decided' && d.target === 'local');
-  $('#a3').classList.toggle('is-active', phase === 'decided' && d.target === 'frontier');
-  $('#nLocal').classList.toggle('is-active', phase === 'decided' && d.target === 'local');
-  $('#nFrontier').classList.toggle('is-active', phase === 'decided' && d.target === 'frontier');
-  $('#nLocal').classList.toggle('is-off', phase === 'decided' && d.target !== 'local');
-  $('#nFrontier').classList.toggle('is-off', phase === 'decided' && d.target !== 'frontier');
+  $('#aDecision').classList.toggle('is-active', active);
+  $('#a2').classList.toggle('is-active', phase === 'decided');
+  for (const [id, target] of [['nLocal', 'local'], ['nFrontier', 'frontier']]) {
+    const selected = phase === 'decided' && d && d.target === target;
+    const node = $('#' + id); node.dataset.selected = String(!!selected);
+    node.classList.toggle('is-off', phase === 'decided' && !selected);
+    node.querySelector('.selection-mark').hidden = !selected;
+  }
+  $('#whyModel').disabled = !d;
+  $('#emptyExplanation').hidden = !!d;
+  $('#scoreStatus').textContent = t(phase === 'asking' ? 'asking' : phase === 'decided' ? 'scoresReady' : 'waitingScores');
+  $('#routeSummary').textContent = d ? t(d.target === 'local' ? 'decidedLocal' : 'decidedFrontier') : t('flowHint');
+  if (phase === 'decided' && d) statusEl.textContent = t(d.target === 'local' ? 'decidedLocal' : 'decidedFrontier');
+  else if (phase === 'asking') statusEl.textContent = t('asking');
   renderResponse();
+  requestAnimationFrame(drawConnections);
 }
+
+function drawConnections() {
+  const base = routerEl.getBoundingClientRect();
+  for (const [wireId, fromId, toId] of [['a1', 'nPrompt', 'nPolicy'], ['aDecision', 'nPolicy', 'nJev'], ['a2', 'nJev', 'modelSelection']]) {
+    const a = $('#' + fromId).getBoundingClientRect(), b = $('#' + toId).getBoundingClientRect();
+    const across = b.left >= a.right - 1;
+    const x1 = (across ? a.right : a.left + a.width / 2) - base.left;
+    const y1 = (across ? a.top + a.height / 2 : a.bottom) - base.top;
+    const x2 = (across ? b.left : b.left + b.width / 2) - base.left;
+    const y2 = (across ? b.top + b.height / 2 : b.top) - base.top;
+    const path = across ? `M ${x1} ${y1} H ${(x1 + x2) / 2} V ${y2} H ${x2}` : `M ${x1} ${y1} V ${(y1 + y2) / 2} H ${x2} V ${y2}`;
+    $('#' + wireId).setAttribute('d', path);
+  }
+  renderVerification();
+}
+
+function verify() {
+  const enabled = STATE.signals.filter((s) => s.enabled).map((s) => s.id);
+  const sameIds = (selector) => JSON.stringify([...document.querySelectorAll(selector)].map((el) => el.dataset.id)) === JSON.stringify(enabled);
+  const stages = [...routerEl.querySelectorAll(':scope > [data-stage]')];
+  const base = routerEl.getBoundingClientRect();
+  const checks = {
+    onePrompt: document.querySelectorAll('#prompt').length === 1 && $('#nPrompt').contains(promptEl),
+    stageOrder: stages.map((el) => el.id).join(',') === 'nPrompt,nPolicy,nJev,modelSelection',
+    signalSync: sameIds('#policySignals .policy-signal') && sameIds('#scoreSignals .score-signal'),
+    sideSheet: sideSheetEl.tagName === 'DIALOG',
+    modelSelection: JSON.stringify([...document.querySelectorAll('.model-card[data-selected="true"]')].map((el) => el.dataset.model)) === JSON.stringify(STATE.phase === 'decided' && STATE.decision ? [STATE.decision.target] : []) && routerEl.dataset.target === (STATE.decision ? STATE.decision.target : 'none'),
+    geometry: stages.every((el) => { const r = el.getBoundingClientRect(); return r.left >= base.left - 1 && r.right <= base.right + 1 && r.top >= base.top - 1 && r.bottom <= base.bottom + 1; }),
+    noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+  };
+  return { ok: Object.values(checks).every(Boolean), checks };
+}
+function renderVerification() {
+  const report = verify(); document.body.dataset.verified = String(report.ok);
+  $('#verificationResults').replaceChildren(...Object.entries(report.checks).map(([name, ok]) => {
+    const li = document.createElement('li'); li.dataset.check = name; li.dataset.pass = String(ok); li.textContent = `${ok ? '✓' : '✗'} ${t('check_' + name)}`; return li;
+  }));
+}
+
+function openSideSheet(panel) {
+  if (panel) {
+    sideSheetEl.querySelectorAll(':scope .sheet-items > details').forEach((el) => { el.open = el.dataset.panel === panel; });
+  }
+  if (!sideSheetEl.open) sideSheetEl.showModal();
+  document.body.dataset.sheet = 'open'; $('#btnTools').setAttribute('aria-expanded', 'true');
+  if (panel) sideSheetEl.querySelector(`[data-panel="${panel}"]`).scrollIntoView({ block: 'nearest' });
+  renderVerification();
+}
+function invalidateDecision() {
+  STATE.requestId++; STATE.answers = {}; STATE.decision = null; STATE.lastRequest = null; STATE.lastResponse = null;
+  setPhase('idle', ''); renderSignals(); renderRouter(); renderRaw();
+}
+
 
 function renderResponse() {
   const d = STATE.decision;
@@ -695,6 +847,12 @@ function renderRaw() {
   rawResEl.textContent = STATE.lastResponse ? JSON.stringify(STATE.lastResponse, null, 2) : '{}';
 }
 
+function redecide() {
+  if (STATE.phase !== 'decided') return;
+  STATE.decision = decide(STATE.signals, STATE.answers, STATE.thresholds);
+  routerEl.dataset.target = STATE.decision.target;
+}
+
 function setPhase(phase, message) {
   STATE.phase = phase;
   document.body.dataset.phase = phase;
@@ -717,14 +875,17 @@ function renderSettings() {
 
 // ─── Actions ───
 async function route() {
+  if (STATE.phase === 'asking') return;
+  const requestId = ++STATE.requestId;
   const prompt = promptEl.value.trim();
-  if (!prompt) { setPhase('idle', t('emptyPrompt')); promptEl.focus(); return; }
+  if (!prompt) { invalidateDecision(); setPhase('idle', t('emptyPrompt')); promptEl.focus(); return; }
   STATE.answers = {}; STATE.decision = null;
   STATE.lastRequest = buildRequest(prompt, STATE.signals); STATE.lastResponse = null;
   setPhase('asking', t('asking'));
   renderSignals(); renderRouter(); renderRaw();
   try {
     const res = await askJev(STATE.lastRequest);
+    if (requestId !== STATE.requestId) return;
     STATE.lastResponse = res;
     STATE.answers = res.answers || {};
     STATE.decision = decide(STATE.signals, STATE.answers, STATE.thresholds);
@@ -732,6 +893,7 @@ async function route() {
     STATE.log.unshift({ time: new Date().toLocaleTimeString(), prompt, target: STATE.decision.target, fired, tokens: res.usage ? res.usage.input_tokens : 0 });
     setPhase('decided', t(STATE.decision.target === 'local' ? 'decidedLocal' : 'decidedFrontier'));
   } catch (err) {
+    if (requestId !== STATE.requestId) return;
     setPhase('error', t('errorPrefix') + err.message);
   }
   renderSignals(); renderRouter(); renderLog(); renderRaw();
@@ -772,24 +934,34 @@ function saveSignalFromForm() {
   if (type === 'score' && signal.criteria.length < 2) { $('#sigLevels').focus(); return false; }
   const idx = STATE.signals.findIndex((s) => s.id === existingId);
   if (idx >= 0) { signal.enabled = STATE.signals[idx].enabled; STATE.signals[idx] = signal; } else STATE.signals.push(signal);
-  persistSignals(); renderSignals(); renderRouter();
+  persistSignals(); invalidateDecision();
   return true;
+}
+const SIGNAL_TYPES = ['noul', 'score'];
+const SIGNAL_POLICIES = ['lock_local', 'lock_frontier', 'soft_frontier', 'soft_local'];
+function validSignal(s) {
+  if (!s || typeof s !== 'object') return false;
+  if (typeof s.id !== 'string' || !s.id || typeof s.instructions !== 'string' || !s.instructions) return false;
+  if (!SIGNAL_TYPES.includes(s.type)) return false;
+  if (s.policy !== undefined && !SIGNAL_POLICIES.includes(s.policy)) return false;
+  if (s.type === 'score') return Array.isArray(s.criteria) && s.criteria.length >= 2 && s.criteria.every((l) => typeof l === 'string');
+  return s.criteria === undefined || (typeof s.criteria === 'object' && s.criteria !== null && !Array.isArray(s.criteria));
 }
 function uniqueId(base) { let id = base, i = 2; while (STATE.signals.some((s) => s.id === id)) id = `${base}_${i++}`; return id; }
 
 function exportSignals() {
   const blob = new Blob([JSON.stringify(STATE.signals, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'jev-router-signals.json'; a.click();
-  URL.revokeObjectURL(a.href);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 function importSignals(file) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
       const list = JSON.parse(reader.result);
-      if (!Array.isArray(list) || !list.every((s) => s.id && s.type && s.instructions)) throw new Error('shape');
-      STATE.signals = list.map((s) => ({ enabled: true, policy: 'soft_frontier', name: { pl: s.id, en: s.id }, ...s }));
-      persistSignals(); renderSignals(); renderRouter();
+      if (!Array.isArray(list) || !list.length || !list.every(validSignal)) throw new Error('shape');
+      STATE.signals = list.map((s) => ({ enabled: true, policy: 'soft_frontier', name: { pl: s.id, en: s.id }, ...s, enabled: s.enabled !== false }));
+      persistSignals(); invalidateDecision();
     } catch { setPhase(STATE.phase, t('importBad')); }
   };
   reader.readAsText(file);
@@ -798,25 +970,26 @@ function importSignals(file) {
 // ─── Listeners ───
 btnRoute.addEventListener('click', route);
 document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); route(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !document.querySelector('dialog[open]')) { e.preventDefault(); route(); }
   if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey && !['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog[open]')) {
-    const p = PRESETS[+e.key - 1]; if (p) { promptEl.value = p.text; route(); }
+    const p = PRESETS[+e.key - 1]; if (p) { invalidateDecision(); promptEl.value = p.text; route(); }
   }
 });
 presetsEl.addEventListener('click', (e) => {
   const b = e.target.closest('[data-preset]'); if (!b) return;
+  sideSheetEl.close(); invalidateDecision();
   promptEl.value = PRESETS.find((p) => p.key === b.dataset.preset).text; route();
 });
-document.querySelectorAll('[data-lang-btn]').forEach((b) => b.addEventListener('click', () => { STATE.lang = b.dataset.langBtn; localStorage.setItem(LS.lang, STATE.lang); applyI18n(); }));
+document.querySelectorAll('[data-lang-btn]').forEach((b) => b.addEventListener('click', () => { STATE.lang = b.dataset.langBtn; writeStorage(LS.lang, STATE.lang); applyI18n(); }));
 
 signalsEl.addEventListener('click', (e) => {
   const edit = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
   if (edit) openSignalEditor(STATE.signals.find((s) => s.id === edit.dataset.edit));
-  if (del && confirm(t('confirmDelete'))) { STATE.signals = STATE.signals.filter((s) => s.id !== del.dataset.del); persistSignals(); renderSignals(); renderRouter(); }
+  if (del && confirm(t('confirmDelete'))) { STATE.signals = STATE.signals.filter((s) => s.id !== del.dataset.del); persistSignals(); invalidateDecision(); }
 });
 signalsEl.addEventListener('change', (e) => {
   const tog = e.target.closest('[data-toggle]'); if (!tog) return;
-  const s = STATE.signals.find((x) => x.id === tog.dataset.toggle); s.enabled = tog.checked; persistSignals(); renderSignals(); renderRouter();
+  const s = STATE.signals.find((x) => x.id === tog.dataset.toggle); s.enabled = tog.checked; persistSignals(); invalidateDecision();
 });
 $('#btnAddSignal').addEventListener('click', () => openSignalEditor(null));
 $('#sigType').addEventListener('change', syncCriteriaFields);
@@ -827,25 +1000,45 @@ $('#btnImport').addEventListener('click', () => $('#importFile').click());
 $('#importFile').addEventListener('change', (e) => { if (e.target.files[0]) importSignals(e.target.files[0]); e.target.value = ''; });
 
 $('#btnSettings').addEventListener('click', () => { renderSettings(); dlgSettings.showModal(); });
-$('#workerUrl').addEventListener('change', (e) => { STATE.workerUrl = e.target.value.trim(); localStorage.setItem(LS.worker, STATE.workerUrl); renderMode(); });
+$('#workerUrl').addEventListener('change', (e) => {
+  const v = e.target.value.trim(); e.target.value = v;
+  e.target.setCustomValidity(v && !/^https?:\/\/\S+$/i.test(v) ? 'http(s)://' : '');
+  if (v && !e.target.checkValidity()) { e.target.reportValidity(); return; }
+  STATE.workerUrl = v; writeStorage(LS.worker, STATE.workerUrl); invalidateDecision(); renderMode();
+});
 for (const [id, key] of [['thNoulYes', 'noulYes'], ['thNoulNo', 'noulNo'], ['thScoreHigh', 'scoreHigh'], ['thMinConf', 'minConfidence']]) {
   $('#' + id).addEventListener('input', (e) => {
     STATE.thresholds[key] = +e.target.value; $('#' + id + 'Val').textContent = fmt(+e.target.value); persistThresholds();
-    if (STATE.phase === 'decided') STATE.decision = decide(STATE.signals, STATE.answers, STATE.thresholds);
+    redecide();
     renderSignals(); renderRouter();
   });
 }
-$('#btnResetSignals').addEventListener('click', () => { STATE.signals = structuredClone(DEFAULT_SIGNALS); STATE.thresholds = { ...DEFAULT_THRESHOLDS }; persistSignals(); persistThresholds(); renderSettings(); renderSignals(); renderRouter(); });
+$('#btnResetSignals').addEventListener('click', () => { STATE.signals = structuredClone(DEFAULT_SIGNALS); STATE.thresholds = { ...DEFAULT_THRESHOLDS }; persistSignals(); persistThresholds(); renderSettings(); invalidateDecision(); });
 $('#btnClearLog').addEventListener('click', () => { STATE.log = []; renderLog(); });
 
+promptEl.addEventListener('input', invalidateDecision);
+$('#btnTools').addEventListener('click', () => openSideSheet());
+document.querySelectorAll('[data-open-panel]').forEach((button) => button.addEventListener('click', () => openSideSheet(button.dataset.openPanel)));
+$('#btnCloseSheet').addEventListener('click', () => sideSheetEl.close());
+sideSheetEl.addEventListener('close', () => { document.body.dataset.sheet = 'closed'; $('#btnTools').setAttribute('aria-expanded', 'false'); });
+sideSheetEl.addEventListener('click', (event) => {
+  if (event.target !== sideSheetEl) return;
+  const r = sideSheetEl.getBoundingClientRect();
+  if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) sideSheetEl.close();
+});
+window.addEventListener('resize', drawConnections);
+
 // ─── Init ───
-STATE.lang = localStorage.getItem(LS.lang) || 'pl';
-STATE.workerUrl = localStorage.getItem(LS.worker) || '';
+STATE.lang = ['pl', 'en'].includes(readStorage(LS.lang)) ? readStorage(LS.lang) : 'pl';
+STATE.workerUrl = readStorage(LS.worker) || '';
 STATE.signals = loadJSON(LS.signals, null) || structuredClone(DEFAULT_SIGNALS);
 STATE.thresholds = { ...DEFAULT_THRESHOLDS, ...loadJSON(LS.thresholds, {}) };
 renderMode(); applyI18n(); renderRaw(); setPhase('idle', '');
 
-window.App = { STATE, T, t, decide, signalState, buildRequest, mockJev, route, DEFAULT_SIGNALS, PRESETS };
+window.App = { STATE, T, t, decide, signalState, buildRequest, mockJev, route, redecide, validSignal, DEFAULT_SIGNALS, PRESETS, verify, openSideSheet, CONTRACT: { version: 2, stages: ['prompt', 'policy', 'jev', 'models'] } };
+new ResizeObserver(drawConnections).observe(routerEl);
+document.fonts.ready.then(drawConnections);
+requestAnimationFrame(drawConnections);
 </script>
 </body>
 </html>
