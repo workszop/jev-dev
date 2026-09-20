@@ -81,6 +81,8 @@ try {
   await page.waitForTimeout(150);
 
   check('phase idle at start', (await page.getAttribute('body', 'data-phase')) === 'idle');
+  check('panel hidden at start', (await page.getAttribute('body', 'data-sheet')) === 'closed');
+  check('no mock pill in header', (await page.$$('#mockBadge')).length === 0);
   check('mock flag', (await page.getAttribute('body', 'data-mock')) === String(MOCK));
   check('4 default signals in side sheet', (await page.$$eval('#signals .signal', (els) => els.length)) === 4);
 
@@ -98,6 +100,8 @@ try {
   const initialContract = await page.evaluate(() => ({ report: App.verify(), stages: [...document.querySelectorAll('#router > section')].map((el) => el.id) }));
   check('desktop DOM contract', initialContract.report.ok && initialContract.stages.join(',') === 'nPrompt,nPolicy,nJev,modelSelection', initialContract);
 
+  // The panel starts hidden; open it to check the docked layout at desktop width, then close it again.
+  await openSheet('signals');
   const layoutStyle = await page.evaluate(() => {
     const style = (id) => getComputedStyle(document.getElementById(id));
     const rect = (id) => document.getElementById(id).getBoundingClientRect();
@@ -111,6 +115,7 @@ try {
     };
   });
   check('white prompt, compact stages, model examples, and docked settings', Object.values(layoutStyle).every(Boolean), layoutStyle);
+  await closeSheet();
   await page.locator('#prompt').press('Control+Enter');
   check('route shortcut works beside nonmodal settings', await page.evaluate(() => document.querySelector('#status').textContent === App.t('emptyPrompt')));
 
@@ -136,10 +141,29 @@ try {
 
   const presets = await page.evaluate(() => App.PRESETS.map((preset) => ({ key: preset.key, expect: preset.expect })));
   check('six presets exposed', presets.length === 6, presets.map((preset) => preset.key).join(','));
+  await page.waitForFunction(() => document.body.dataset.questions && document.body.dataset.questions !== 'none', null, { timeout: 5000 });
+  const pool = await page.evaluate(() => ({ source: App.STATE.questionsSource, sizes: Object.fromEntries(App.PRESETS.map((p) => [p.key, App.questionPool(p.key).length])) }));
+  check('question pool loaded from sample-questions.md', pool.source === 'md' && Object.values(pool.sizes).every((n) => n >= 3), pool);
+  if (MOCK) {
+    // Every question in every category must route to the category's expected target in mock mode.
+    const mismatches = await page.evaluate(async () => {
+      const out = [];
+      await Promise.all(App.PRESETS.flatMap((p) => App.questionPool(p.key).flatMap((q) => ['en', 'pl'].map(async (lang) => {
+        const text = q[lang]; if (!text) { out.push(`${p.key}: missing ${lang}`); return; }
+        const res = await App.mockJev(App.buildRequest(text, App.DEFAULT_SIGNALS));
+        const d = App.decide(App.DEFAULT_SIGNALS, res.answers, App.STATE.thresholds);
+        if (d.target !== p.expect) out.push(`${p.key}/${lang}: ${d.target} "${text.slice(0, 50)}"`);
+      }))));
+      return out;
+    });
+    check('whole pool routes as its category expects (mock)', mismatches.length === 0, mismatches.join(' | '));
+  }
   for (const preset of presets) {
     await openSheet('examples');
     await page.click(`#presets [data-preset="${preset.key}"]`);
     const phase = await waitForDecision();
+    const drawn = await page.evaluate((key) => { const v = document.querySelector('#prompt').value; return App.questionPool(key).some((q) => q.en === v || q.pl === v); }, preset.key);
+    check(`preset ${preset.key} draws from its pool`, drawn);
     const target = await page.getAttribute('#router', 'data-target');
     const states = await page.$$eval('#scoreSignals .score-signal', (els) => Object.fromEntries(els.map((el) => [el.dataset.id, `${el.dataset.state}:${el.dataset.value}`])));
     const status = await page.textContent('#status');

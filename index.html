@@ -278,7 +278,7 @@ body[data-phase="decided"] .response { display:block; }
 @media(max-width:768px) {
   :root { --canvas-pad:16px; --stage-title:25px; }
   .edu-header-inner { gap:8px; } .edu-wordmark { font-size:var(--mobile-wordmark); } .header-title { display:none; }
-  .edu-logo { width:38px; height:38px; } #mockBadge { display:none!important; }
+  .edu-logo { width:38px; height:38px; }
   .router { display:grid; grid-template-columns:minmax(0,1fr); gap:36px; min-height:0; }
   .flow-stage { padding:24px; } .prompt-stage { min-height:460px; } .prompt-stage textarea { min-height:200px; }
   .selection-stage { padding:0; } .model-targets { grid-template-columns:1fr 1fr; grid-template-rows:1fr; gap:12px; }
@@ -298,7 +298,6 @@ body[data-phase="decided"] .response { display:block; }
     <span class="edu-wordmark">edulab</span>
     <span class="header-title" data-t="appTitle">Jev Router</span>
     <span class="header-spacer"></span>
-    <span id="mockBadge" class="chip sand hidden" data-t="mockBadge">mock</span>
     <button class="btn" id="btnTools" type="button" aria-haspopup="dialog" aria-controls="sideSheet" aria-expanded="false">Otwórz panel</button>
     <div class="edu-seg" role="group" aria-label="Language">
       <button data-lang-btn="pl" class="active">PL</button>
@@ -362,7 +361,7 @@ body[data-phase="decided"] .response { display:block; }
     <div class="field">
       <label for="workerUrl">Worker URL</label>
       <input type="url" id="workerUrl" placeholder="https://jev-router.andrzey-jankowski.workers.dev/">
-      <span class="hint" data-t="workerHint">Puste pole = tryb mock (bez wywołań Jev).</span>
+      <span class="hint" data-t="workerHint">Puste pole = domyślny Worker projektu.</span>
     </div>
     <div class="field">
       <label data-t="thNoulYes">Noul: próg TAK</label>
@@ -452,19 +451,26 @@ const DEFAULT_SIGNALS = [
 ];
 
 const PRESETS = [
-  { key: 'pii', expect: 'local', pl: 'Dane osobowe', en: 'Personal data', desc: { pl: 'PESEL i adres w treści', en: 'PESEL and address inside' },
-    text: 'Napisz uprzejmą odpowiedź do klienta Jana Kowalskiego, PESEL 90010112345, zamieszkałego przy ul. Długiej 12, Kraków, tel. 601 222 333, że jego reklamacja została przyjęta.' },
-  { key: 'proprietary', expect: 'local', pl: 'Dane firmowe', en: 'Company data', desc: { pl: 'poufne wyniki kwartalne', en: 'confidential quarterly results' },
-    text: 'Here is our internal Q3 board deck (CONFIDENTIAL): revenue 4.2M EUR, churn 9%, planned layoffs in the Wrocław office. Summarise the key risks for the CEO in five bullet points.' },
-  { key: 'trivia', expect: 'local', pl: 'Proste pytanie', en: 'Simple question', desc: { pl: 'niska złożoność, niska wiedza', en: 'low complexity, low knowledge' },
-    text: 'What is the capital of Portugal and what is one dish I should try there?' },
-  { key: 'deep', expect: 'frontier', pl: 'Głęboka analiza', en: 'Deep analysis', desc: { pl: 'wysoka złożoność i wiedza', en: 'high complexity and knowledge' },
-    text: 'Compare the EU AI Act obligations for general-purpose AI providers with the NIST AI RMF, identify where a mid-size Polish SaaS company would face conflicting requirements, and propose a phased compliance roadmap with trade-offs.' },
-  { key: 'mixed', expect: 'local', pl: 'Mieszany', en: 'Mixed', desc: { pl: 'złożone, ale z PII', en: 'complex, but contains PII' },
-    text: 'Analyse the attached medical history of patient Anna Nowak (born 1978-03-04, PESEL 78030412345): recurrent migraines, hypertension, metformin 500mg. Propose a differential diagnosis and a treatment plan with the latest guideline evidence.' },
-  { key: 'edge', expect: 'local', pl: 'Niejednoznaczny', en: 'Ambiguous', desc: { pl: 'gdzie ląduje?', en: 'where does it go?' },
-    text: 'Explain to a colleague how our team usually handles a customer refund when the order came from the marketplace, and draft a short email template.' },
+  { key: 'pii', expect: 'local', pl: 'Dane osobowe', en: 'Personal data', desc: { pl: 'PESEL i adres w treści', en: 'PESEL and address inside' } },
+  { key: 'proprietary', expect: 'local', pl: 'Dane firmowe', en: 'Company data', desc: { pl: 'poufne wyniki kwartalne', en: 'confidential quarterly results' } },
+  { key: 'trivia', expect: 'local', pl: 'Proste pytanie', en: 'Simple question', desc: { pl: 'niska złożoność, niska wiedza', en: 'low complexity, low knowledge' } },
+  { key: 'deep', expect: 'frontier', pl: 'Głęboka analiza', en: 'Deep analysis', desc: { pl: 'wysoka złożoność i wiedza', en: 'high complexity and knowledge' } },
+  { key: 'mixed', expect: 'local', pl: 'Mieszany', en: 'Mixed', desc: { pl: 'złożone, ale z PII', en: 'complex, but contains PII' } },
+  { key: 'edge', expect: 'local', pl: 'Niejednoznaczny', en: 'Ambiguous', desc: { pl: 'gdzie ląduje?', en: 'where does it go?' } },
 ];
+
+// ─── Constants: live Worker + question pool ───
+const DEFAULT_WORKER_URL = 'https://jev-router.andrzey-jankowski.workers.dev/';
+const QUESTIONS_URL = 'sample-questions.md';
+// Used only when sample-questions.md cannot be fetched (e.g. opened from file://).
+const FALLBACK_QUESTIONS = {
+  pii: [{ en: 'Draft a reminder about an overdue invoice for the customer with PESEL 85042311876. Keep it polite and give a 14-day deadline.', pl: 'Napisz przypomnienie o zaległej fakturze dla klienta o numerze PESEL 85042311876. Uprzejmy ton, termin 14 dni.' }],
+  proprietary: [{ en: 'Below is the pricing we plan to announce for the 2027 enterprise tier; nobody outside the product team has seen it yet. Turn it into a one-paragraph summary for the sales kickoff.', pl: 'Poniżej cennik, który planujemy ogłosić dla pakietu enterprise w 2027 roku; nikt poza zespołem produktowym jeszcze go nie widział. Zrób z tego jeden akapit na spotkanie otwierające sprzedaż.' }],
+  trivia: [{ en: 'What year did the Berlin Wall fall, and which two countries reunified afterwards?', pl: 'W którym roku upadł mur berliński i które dwa państwa się potem zjednoczyły?' }],
+  deep: [{ en: 'Prove that the sum of the first n odd numbers equals n squared, then explain why the same argument fails for even numbers.', pl: 'Udowodnij, że suma pierwszych n liczb nieparzystych równa się n do kwadratu, a potem wyjaśnij, dlaczego ten sam argument nie działa dla liczb parzystych.' }],
+  mixed: [{ en: 'Using the anonymised cohort below (patient IDs P001–P040, age band, HbA1c trend), suggest which subgroups would benefit most from a GLP-1 trial and what confounders to control for.', pl: 'Na podstawie zanonimizowanej kohorty poniżej (ID pacjentów P001–P040, przedział wieku, trend HbA1c) wskaż, które podgrupy najbardziej skorzystałyby z badania GLP-1 i jakie zmienne zakłócające trzeba kontrolować.' }],
+  edge: [{ en: 'Explain to a colleague how our team usually handles a customer refund when the order came from the marketplace, and draft a short email template.', pl: 'Wyjaśnij koledze, jak nasz zespół zwykle obsługuje zwrot pieniędzy, gdy zamówienie przyszło z marketplace\'u, i przygotuj krótki szablon maila.' }],
+};
 
 // ─── i18n ───
 const T = {
@@ -480,12 +486,12 @@ const T = {
     waitingDecision: 'Routuj prompt, aby zobaczyć uzasadnienie.', flowHint: 'Prompt → polityka → ocena sygnałów → wybór modelu', selectionOnly: 'Wybór modelu jest demonstracją. Prompt nie trafia do modelu docelowego.',
     verificationTitle: 'Kontrola interfejsu', keyboardHelp: 'Ctrl + Enter: routuj. 1–6: przykłady. Escape: zamknij panel.',
     check_onePrompt: 'Jeden zintegrowany prompt', check_stageOrder: 'Kolejność czterech etapów', check_signalSync: 'Spójne listy sygnałów i wyników', check_sideSheet: 'Natywny panel boczny', check_modelSelection: 'Wybór dokładnie jednego modelu po decyzji', check_geometry: 'Etapy mieszczą się na planszy', check_noOverflow: 'Brak przewijania poziomego',
-    appTitle: 'Jev Router', mockBadge: 'mock', settings: 'Ustawienia', promptTitle: 'Prompt użytkownika', promptPlaceholder: 'Wpisz prompt, który trafiłby do asystenta AI...',
-    route: 'Routuj', presetsTitle: 'Przykłady', signalsTitle: 'Sygnały (pytania do Jev)', signalsLead: 'Każdy sygnał to jedno typowane pytanie. Wszystkie idą do Jev w jednym żądaniu, a polityka w kodzie podejmuje decyzję.',
+    appTitle: 'Jev Router', settings: 'Ustawienia', promptTitle: 'Prompt użytkownika', promptPlaceholder: 'Wpisz prompt, który trafiłby do asystenta AI...',
+    route: 'Routuj', presetsTitle: 'Przykłady', poolCount: 'losowo z {n} pytań', signalsTitle: 'Sygnały (pytania do Jev)', signalsLead: 'Każdy sygnał to jedno typowane pytanie. Wszystkie idą do Jev w jednym żądaniu, a polityka w kodzie podejmuje decyzję.',
     addSignal: 'Dodaj sygnał', editSignal: 'Edytuj sygnał', exportSignals: 'Eksport JSON', importSignals: 'Import JSON', routerTitle: 'Decyzja routera',
     nPromptOver: 'wejście', nPrompt: 'Prompt', nPolicyOver: 'twój kod', nPolicy: 'Polityka', nLocalOver: 'lokalnie', nLocal: 'Model lokalny', nFrontierOver: 'zewnętrznie', nFrontier: 'Model frontier',
     logTitle: 'Dziennik decyzji', clearLog: 'Wyczyść', thTime: 'Czas', thPrompt: 'Prompt', thTarget: 'Cel', thFired: 'Sygnały', thTokens: 'Tokeny',
-    rawTitle: 'Surowe żądanie i odpowiedź Jev', rawReq: 'żądanie', rawRes: 'odpowiedź', workerHint: 'Puste pole = tryb mock (bez prawdziwych wywołań Jev).',
+    rawTitle: 'Surowe żądanie i odpowiedź Jev', rawReq: 'żądanie', rawRes: 'odpowiedź', workerHint: 'Puste pole = domyślny Worker projektu (klucz Jev jest po stronie Workera).',
     thNoulYes: 'Noul: próg TAK', thNoulNo: 'Noul: próg NIE', thScoreHigh: 'Score: próg "wysoki"', thMinConf: 'Minimalna pewność (confidence)', resetSignals: 'Przywróć domyślne sygnały', close: 'Zamknij',
     namePl: 'Nazwa (PL)', nameEn: 'Nazwa (EN)', type: 'Typ', policy: 'Polityka', pLockLocal: 'Blokada: lokalnie', pLockFrontier: 'Blokada: frontier', pSoftFrontier: 'Głos: frontier', pSoftLocal: 'Głos: lokalnie',
     instructions: 'Pytanie (EN, instructions)', instrHint: 'Jev działa najlepiej po angielsku. Odnoś się do stanu jako "the prompt".', critTrue: 'Co znaczy TAK', critFalse: 'Co znaczy NIE', critLevels: 'Poziomy (jeden na linię, od najniższego)', cancel: 'Anuluj', save: 'Zapisz',
@@ -508,12 +514,12 @@ const T = {
     waitingDecision: 'Route a prompt to see its explanation.', flowHint: 'Prompt → policy → signal evaluation → model selection', selectionOnly: 'Model selection is a demonstration. No prompt is sent to the selected model.',
     verificationTitle: 'Interface checks', keyboardHelp: 'Ctrl + Enter: route. 1–6: examples. Escape: close sheet.',
     check_onePrompt: 'One integrated prompt', check_stageOrder: 'Four stages in order', check_signalSync: 'Matching policy and score signals', check_sideSheet: 'Native side sheet', check_modelSelection: 'Exactly one selected model after a decision', check_geometry: 'Stages fit the canvas', check_noOverflow: 'No horizontal overflow',
-    appTitle: 'Jev Router', mockBadge: 'mock', settings: 'Settings', promptTitle: 'User prompt', promptPlaceholder: 'Type a prompt that would go to an AI assistant...',
-    route: 'Route', presetsTitle: 'Examples', signalsTitle: 'Signals (questions for Jev)', signalsLead: 'Each signal is one typed question. All of them go to Jev in a single request, and the policy in code makes the decision.',
+    appTitle: 'Jev Router', settings: 'Settings', promptTitle: 'User prompt', promptPlaceholder: 'Type a prompt that would go to an AI assistant...',
+    route: 'Route', presetsTitle: 'Examples', poolCount: 'random pick from {n} questions', signalsTitle: 'Signals (questions for Jev)', signalsLead: 'Each signal is one typed question. All of them go to Jev in a single request, and the policy in code makes the decision.',
     addSignal: 'Add signal', editSignal: 'Edit signal', exportSignals: 'Export JSON', importSignals: 'Import JSON', routerTitle: 'Router decision',
     nPromptOver: 'input', nPrompt: 'Prompt', nPolicyOver: 'your code', nPolicy: 'Policy', nLocalOver: 'on-premise', nLocal: 'Local model', nFrontierOver: 'external', nFrontier: 'Frontier model',
     logTitle: 'Decision log', clearLog: 'Clear', thTime: 'Time', thPrompt: 'Prompt', thTarget: 'Target', thFired: 'Signals', thTokens: 'Tokens',
-    rawTitle: 'Raw Jev request and response', rawReq: 'request', rawRes: 'response', workerHint: 'Empty = mock mode (no real Jev calls).',
+    rawTitle: 'Raw Jev request and response', rawReq: 'request', rawRes: 'response', workerHint: 'Empty = the project default Worker (the Jev key lives in the Worker).',
     thNoulYes: 'Noul: YES threshold', thNoulNo: 'Noul: NO threshold', thScoreHigh: 'Score: "high" threshold', thMinConf: 'Minimum confidence', resetSignals: 'Restore default signals', close: 'Close',
     namePl: 'Name (PL)', nameEn: 'Name (EN)', type: 'Type', policy: 'Policy', pLockLocal: 'Lock: local', pLockFrontier: 'Lock: frontier', pSoftFrontier: 'Vote: frontier', pSoftLocal: 'Vote: local',
     instructions: 'Question (EN, instructions)', instrHint: 'Jev is strongest in English. Refer to the state as "the prompt".', critTrue: 'What YES means', critFalse: 'What NO means', critLevels: 'Levels (one per line, lowest first)', cancel: 'Cancel', save: 'Save',
@@ -538,7 +544,7 @@ const STATE = {
 const $ = (sel) => document.querySelector(sel);
 const promptEl = $('#prompt'), btnRoute = $('#btnRoute'), statusEl = $('#status'), presetsEl = $('#presets');
 const signalsEl = $('#signals'), routerEl = $('#router'), responseEl = $('#response'), logEl = $('#log');
-const rawReqEl = $('#rawRequest'), rawResEl = $('#rawResponse'), mockBadge = $('#mockBadge');
+const rawReqEl = $('#rawRequest'), rawResEl = $('#rawResponse');
 const dlgSettings = $('#dlgSettings'), dlgSignal = $('#dlgSignal'), signalForm = $('#signalForm');
 const policySignalsEl = $('#policySignals'), scoreSignalsEl = $('#scoreSignals'), sideSheetEl = $('#sideSheet');
 
@@ -624,23 +630,30 @@ async function askJev(request) {
 }
 
 // ─── Helpers: mock Jev (keyword heuristics, same response shape) ───
+// Strong hits land in the "fire" band (~0.82-0.92), weak ones in the uncertain band (~0.42-0.60).
 const MOCK_RULES = {
-  pii: /pesel|\b\d{11}\b|\bul\.|born \d{4}|tel\.|\b\d{3} \d{3} \d{3}\b|@\w+\.\w+|kowalsk|nowak|patient|pacjent/i,
-  proprietary: /internal|confidential|poufn|our (q[1-4]|board|team|revenue|client)|naszej firm|layoff|source code|contract|umow/i,
+  pii: {
+    strong: /pesel|\b\d{11}\b|\bborn\b|\bur\. ?\d|urodzon|date of birth|data urodzenia|patient|pacjent|\b\d{3}[ -]\d{3}[ -]\d{3}\b|\bcv\b/i,
+    weak: /@\w+\.\w+|\bul\.|addressed to|zaadresowan|biograph|biograf|cohort|kohort|anonymi|zanonimiz|customer emails|adresy e-mail/i,
+  },
+  proprietary: {
+    strong: /nobody outside|nikt poza|plan to announce|planujemy ogłosić|hasn't cleared|nie zaakceptowali|client list|list[aę] naszych klientów|board meeting|zarządu|our (churn|lawyer|clinic)|nasz(e|ej|a|ego)? (dane|prawnik|przychodni)|performance review|oceny pracownicze|internal|wewnętrzn|unreleased/i,
+    weak: /\bour\b|\bnasz|marketplace|source code|kod źródłowy|newsletter|tickets|zgłosze|\bdeck\b|prezentacj|treated at|leczon/i,
+  },
 };
 function mockNoul(id, prompt) {
   const s = STATE.signals.find((x) => x.id === id);
   const rule = MOCK_RULES[id];
-  if (rule) return rule.test(prompt) ? 0.93 + Math.random() * 0.05 : 0.02 + Math.random() * 0.06;
+  if (rule) return rule.strong.test(prompt) ? 0.82 + Math.random() * 0.1 : rule.weak.test(prompt) ? 0.42 + Math.random() * 0.18 : 0.03 + Math.random() * 0.09;
   const hits = (s.instructions.toLowerCase().match(/\b[a-z]{5,}\b/g) || []).filter((w) => prompt.toLowerCase().includes(w)).length;
   return Math.min(0.95, 0.15 + hits * 0.2);
 }
 function mockScore(id, prompt, levels) {
   const words = prompt.split(/\s+/).length;
-  const heavy = /compare|analy|propose|roadmap|trade-off|differential|design|prove|evaluate|strategy|guideline|regulat/i.test(prompt);
+  const heavy = /compare|porównaj|analy|analiz|propose|zaproponuj|roadmap|trade-off|kompromis|differential|różnicow|design|zaprojektuj|prove|udowodnij|evaluate|oceń|strategy|strateg|guideline|wytyczn|regulat|\bplan\b|risk|ryzyk|confounder|zakłócaj|experiment|eksperyment|identify|wskaż/i.test(prompt);
   let expected;
   if (id === 'complexity') expected = heavy ? 1.85 : words > 35 ? 1.0 : 0.15;
-  else if (id === 'knowledge') expected = /act|nist|guideline|diagnos|regulat|compliance|evidence/i.test(prompt) ? 1.8 : words > 35 ? 0.9 : 0.2;
+  else if (id === 'knowledge') expected = /\bact\b|nist|guideline|wytyczn|diagnos|regulat|compliance|evidence|dowod|\brag\b|bm25|rerank|glp|hba1c|civil code|kodeks|write-through|caching|cache/i.test(prompt) ? 1.8 : words > 35 ? 0.9 : 0.2;
   else expected = Math.min(levels.length - 1, words / 25);
   const n = levels.length, probs = {};
   let sum = 0;
@@ -673,6 +686,38 @@ function reasonText(r) {
   return `${who}: ${t(r.key)} → ${t(r.to)}`;
 }
 
+// ─── Helpers: question pool (sample-questions.md) ───
+function parseQuestions(md) {
+  const out = {}; let key = null, item = null;
+  for (const raw of md.split('\n')) {
+    const line = raw.trimEnd();
+    const h = line.match(/^## +([a-z_]+)\b/); if (h) { key = h[1]; out[key] = out[key] || []; item = null; continue; }
+    if (!key) continue;
+    const en = line.match(/^- +EN: +(.+)/); if (en) { item = { en: en[1].trim() }; out[key].push(item); continue; }
+    const pl = line.match(/^ +PL: +(.+)/); if (pl && item) item.pl = pl[1].trim();
+  }
+  for (const k of Object.keys(out)) if (!out[k].length) delete out[k];
+  return out;
+}
+function questionPool(key) { return (STATE.questions || FALLBACK_QUESTIONS)[key] || FALLBACK_QUESTIONS[key] || []; }
+function pickQuestion(key) {
+  const list = questionPool(key); if (!list.length) return '';
+  let i = Math.floor(Math.random() * list.length);
+  if (list.length > 1 && i === STATE.lastQuestion[key]) i = (i + 1) % list.length;
+  STATE.lastQuestion[key] = i;
+  const q = list[i]; return q[STATE.lang] || q.en || q.pl || '';
+}
+async function loadQuestions() {
+  try {
+    const res = await fetch(QUESTIONS_URL, { cache: 'no-cache' }); if (!res.ok) throw new Error(String(res.status));
+    const parsed = parseQuestions(await res.text());
+    if (!PRESETS.some((p) => parsed[p.key])) throw new Error('no categories');
+    STATE.questions = parsed; STATE.questionsSource = 'md';
+  } catch { STATE.questions = FALLBACK_QUESTIONS; STATE.questionsSource = 'fallback'; }
+  document.body.dataset.questions = STATE.questionsSource;
+  renderPresets();
+}
+
 // ─── Render ───
 function applyI18n() {
   document.documentElement.lang = STATE.lang;
@@ -685,11 +730,13 @@ function applyI18n() {
 }
 
 function renderPresets() {
-  presetsEl.innerHTML = PRESETS.map((p, i) => `
-    <button class="preset" data-preset="${p.key}" title="${esc(p.text)}">
+  presetsEl.innerHTML = PRESETS.map((p, i) => {
+    const n = questionPool(p.key).length;
+    return `
+    <button class="preset" data-preset="${p.key}" data-pool="${n}" title="${esc(t('poolCount').replace('{n}', n))}">
       <span class="overline">${i + 1} · ${esc(p[STATE.lang] || p.en)}</span>
-      <span class="desc">${esc(p.desc[STATE.lang] || p.desc.en)}</span>
-    </button>`).join('');
+      <span class="desc">${esc(p.desc[STATE.lang] || p.desc.en)} · ${esc(t('poolCount').replace('{n}', n))}</span>
+    </button>`; }).join('');
 }
 
 function renderSignals() {
@@ -911,9 +958,8 @@ function setPhase(phase, message) {
 }
 
 function renderMode() {
-  STATE.mock = new URLSearchParams(location.search).get('mock') === '1' || !STATE.workerUrl;
+  STATE.mock = new URLSearchParams(location.search).get('mock') === '1';
   document.body.dataset.mock = String(STATE.mock);
-  mockBadge.classList.toggle('hidden', !STATE.mock);
 }
 
 function renderSettings() {
@@ -1023,14 +1069,14 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && sideSheetEl.open && !document.querySelector('dialog:modal')) closeSideSheet();
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !document.querySelector('dialog:modal')) { e.preventDefault(); route(); }
   if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey && !['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog:modal')) {
-    const p = PRESETS[+e.key - 1]; if (p) { invalidateDecision(); promptEl.value = p.text; route(); }
+    const p = PRESETS[+e.key - 1]; if (p) { invalidateDecision(); promptEl.value = pickQuestion(p.key); route(); }
   }
 });
 presetsEl.addEventListener('click', (e) => {
   const b = e.target.closest('[data-preset]'); if (!b) return;
   if (!isSheetDocked()) closeSideSheet();
   invalidateDecision();
-  promptEl.value = PRESETS.find((p) => p.key === b.dataset.preset).text; route();
+  promptEl.value = pickQuestion(b.dataset.preset); route();
 });
 document.querySelectorAll('[data-lang-btn]').forEach((b) => b.addEventListener('click', () => { STATE.lang = b.dataset.langBtn; writeStorage(LS.lang, STATE.lang); applyI18n(); }));
 
@@ -1056,7 +1102,7 @@ $('#workerUrl').addEventListener('change', (e) => {
   const v = e.target.value.trim(); e.target.value = v;
   e.target.setCustomValidity(v && !/^https?:\/\/\S+$/i.test(v) ? 'http(s)://' : '');
   if (v && !e.target.checkValidity()) { e.target.reportValidity(); return; }
-  STATE.workerUrl = v; writeStorage(LS.worker, STATE.workerUrl); invalidateDecision(); renderMode();
+  STATE.workerUrl = v || DEFAULT_WORKER_URL; writeStorage(LS.worker, STATE.workerUrl); invalidateDecision(); renderMode();
 });
 for (const [id, key] of [['thNoulYes', 'noulYes'], ['thNoulNo', 'noulNo'], ['thScoreHigh', 'scoreHigh'], ['thMinConf', 'minConfidence']]) {
   $('#' + id).addEventListener('input', (e) => {
@@ -1082,14 +1128,16 @@ window.addEventListener('resize', () => { syncSheetLayout(); drawConnections(); 
 
 // ─── Init ───
 STATE.lang = ['pl', 'en'].includes(readStorage(LS.lang)) ? readStorage(LS.lang) : 'pl';
-STATE.workerUrl = readStorage(LS.worker) || '';
+STATE.workerUrl = readStorage(LS.worker) || DEFAULT_WORKER_URL;
+STATE.questions = null; STATE.questionsSource = 'none'; STATE.lastQuestion = {};
 STATE.signals = loadJSON(LS.signals, null) || structuredClone(DEFAULT_SIGNALS);
 STATE.thresholds = { ...DEFAULT_THRESHOLDS, ...loadJSON(LS.thresholds, {}) };
 renderMode(); applyI18n(); renderRaw(); setPhase('idle', '');
+loadQuestions();
 
-window.App = { STATE, T, t, decide, signalState, buildRequest, mockJev, route, redecide, validSignal, DEFAULT_SIGNALS, PRESETS, verify, openSideSheet, CONTRACT: { version: 2, stages: ['prompt', 'policy', 'jev', 'models'] } };
+window.App = { STATE, T, t, decide, signalState, buildRequest, mockJev, route, redecide, validSignal, DEFAULT_SIGNALS, PRESETS, pickQuestion, parseQuestions, questionPool, DEFAULT_WORKER_URL, verify, openSideSheet, CONTRACT: { version: 2, stages: ['prompt', 'policy', 'jev', 'models'] } };
 syncSheetLayout();
-if (isSheetDocked()) { openSideSheet('signals'); sideSheetEl.scrollTop = 0; promptEl.focus({ preventScroll: true }); }
+promptEl.focus({ preventScroll: true });
 new ResizeObserver(drawConnections).observe(routerEl);
 document.fonts.ready.then(drawConnections);
 requestAnimationFrame(drawConnections);
