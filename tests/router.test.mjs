@@ -442,3 +442,21 @@ test('DOM contract has the attach file input and list inside nPrompt', () => {
   assert.equal(isNested(input[0], nPrompt[0]), true);
   assert.equal(isNested(list[0], nPrompt[0]), true);
 });
+
+test('attachmentPreview returns the first sentences with an ellipsis when clipped', () => {
+  const text = 'First sentence here. Second one follows. ' + 'Filler sentence number three goes on and on. '.repeat(20);
+  const preview = App.attachmentPreview(text);
+  assert.ok(preview.length <= App.PREVIEW_CHARS + 1, preview.length);
+  assert.ok(preview.startsWith('First sentence here. Second one follows.'));
+  assert.ok(preview.endsWith('…'));
+  assert.equal(App.attachmentPreview('Short note.'), 'Short note.');
+  assert.equal(App.attachmentPreview('a\n\n  b\tc'), 'a b c');
+});
+
+test('DOM contract: route button has no visible label, only an accessible name', () => {
+  const btn = nodeById(domTree, 'btnRoute');
+  assert.equal(btn.length, 1);
+  assert.ok(btn[0].attrs['aria-label'] || btn[0].attrs['data-t-aria-label'], 'needs aria-label');
+  const routeSpan = HTML.match(/<button class="btn primary route-btn" id="btnRoute"[^>]*>[\s\S]*?<\/button>/)[0];
+  assert.equal(/<span data-t="route">/.test(routeSpan), false);
+});
