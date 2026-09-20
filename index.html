@@ -210,8 +210,6 @@ body[data-phase="asking"] .progress { opacity:1; }
 .model-card.is-off { opacity:.32; filter:grayscale(.85); }
 .selection-mark { position:absolute; top:14px; right:14px; margin:0; font-family:var(--font-display); font-weight:700; font-size:var(--caption); letter-spacing:.06em; text-transform:uppercase; padding:6px 12px; border-radius:var(--r-pill); background:var(--yellow); color:var(--yellow-ink); box-shadow:var(--shadow-md); }
 .selection-mark::before { content:'✓ '; }
-.model-choice { margin-left:auto; font-family:var(--font-display); font-weight:700; font-size:var(--body-sm); padding:6px 14px; border-radius:var(--r-pill); background:var(--yellow); color:var(--yellow-ink); }
-.model-choice[hidden] { display:none; }
 .selection-stage .text-action { min-height:28px; }
 .flow-wires { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:0; }
 .flow-wire { fill:none; stroke:var(--wire-idle); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; marker-end:url(#wireTip); }
@@ -336,7 +334,7 @@ body[data-phase="decided"] .response { display:block; }
       <div class="stage-bottom"><span class="stage-meta" id="scoreStatus" data-t="waitingScores">Wyniki pojawią się po routowaniu.</span><button type="button" class="text-action" data-open-panel="raw" data-t="inspectRequest">Zobacz żądanie</button></div>
     </section>
     <section class="flow-stage selection-stage" id="modelSelection" data-stage="models" aria-labelledby="modelsTitle">
-      <div class="stage-heading"><h2 id="modelsTitle" data-t="modelSelection">Wybór modelu</h2><span class="model-choice" id="modelChoice" hidden></span></div>
+      <div class="stage-heading"><h2 id="modelsTitle" data-t="modelSelection">Wybór modelu</h2></div>
       <div class="model-targets">
         <div class="model-card" id="nLocal" data-model="local" data-selected="false"><svg class="model-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span class="overline" data-t="nLocalOver">lokalnie</span><h3 data-t="nLocal">Model lokalny</h3><span class="mono model-name" data-t="localExamples">np. PLLuM, Bielik, Gemma</span><span class="model-note" data-t="localNote">Dane zostają w firmie</span><span class="selection-mark" data-t="selectedModel" hidden>Wybrany</span></div>
         <div class="model-card" id="nFrontier" data-model="frontier" data-selected="false"><svg class="model-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 9.5H7Z"/></svg><span class="overline" data-t="nFrontierOver">zewnętrznie</span><h3 data-t="nFrontier">Model frontier</h3><span class="mono model-name" data-t="frontierExamples">np. GPT, Claude, Gemini</span><span class="model-note" data-t="frontierNote">Zewnętrzny model</span><span class="selection-mark" data-t="selectedModel" hidden>Wybrany</span></div>
@@ -473,7 +471,7 @@ const FALLBACK_QUESTIONS = {
   pii: [{ en: 'Draft a reminder about an overdue invoice for the customer with PESEL 85042311876. Keep it polite and give a 14-day deadline.', pl: 'Napisz przypomnienie o zaległej fakturze dla klienta o numerze PESEL 85042311876. Uprzejmy ton, termin 14 dni.' }],
   proprietary: [{ en: 'Below is the pricing we plan to announce for the 2027 enterprise tier; nobody outside the product team has seen it yet. Turn it into a one-paragraph summary for the sales kickoff.', pl: 'Poniżej cennik, który planujemy ogłosić dla pakietu enterprise w 2027 roku; nikt poza zespołem produktowym jeszcze go nie widział. Zrób z tego jeden akapit na spotkanie otwierające sprzedaż.' }],
   trivia: [{ en: 'What year did the Berlin Wall fall, and which two countries reunified afterwards?', pl: 'W którym roku upadł mur berliński i które dwa państwa się potem zjednoczyły?' }],
-  deep: [{ en: 'Prove that the sum of the first n odd numbers equals n squared, then explain why the same argument fails for even numbers.', pl: 'Udowodnij, że suma pierwszych n liczb nieparzystych równa się n do kwadratu, a potem wyjaśnij, dlaczego ten sam argument nie działa dla liczb parzystych.' }],
+  deep: [{ en: 'Compare three approaches to retrieval-augmented generation for a legal document corpus (hybrid BM25 + dense, late-interaction rerankers, graph-based retrieval). Discuss latency, citation faithfulness and maintenance cost, and recommend one for a 20-person law firm.', pl: 'Porównaj trzy podejścia do RAG dla korpusu dokumentów prawnych (hybryda BM25 + dense, rerankery late-interaction, retrieval oparty na grafie). Omów opóźnienia, wierność cytowań i koszt utrzymania, a potem poleć jedno dla kancelarii zatrudniającej 20 osób.' }],
   mixed: [{ en: 'Using the anonymised cohort below (patient IDs P001–P040, age band, HbA1c trend), suggest which subgroups would benefit most from a GLP-1 trial and what confounders to control for.', pl: 'Na podstawie zanonimizowanej kohorty poniżej (ID pacjentów P001–P040, przedział wieku, trend HbA1c) wskaż, które podgrupy najbardziej skorzystałyby z badania GLP-1 i jakie zmienne zakłócające trzeba kontrolować.' }],
   edge: [{ en: 'Explain to a colleague how our team usually handles a customer refund when the order came from the marketplace, and draft a short email template.', pl: 'Wyjaśnij koledze, jak nasz zespół zwykle obsługuje zwrot pieniędzy, gdy zamówienie przyszło z marketplace\'u, i przygotuj krótki szablon maila.' }],
 };
@@ -716,9 +714,13 @@ function pickQuestion(key) {
 function pickAnyQuestion() {
   const keys = PRESETS.filter((p) => questionPool(p.key).length);
   if (!keys.length) return '';
-  const key = keys[Math.floor(Math.random() * keys.length)].key;
-  STATE.lastCategory = key;
-  return pickQuestion(key);
+  const current = promptEl.value.trim();
+  for (let tries = 0; tries < 8; tries++) {
+    const key = keys[Math.floor(Math.random() * keys.length)].key;
+    const text = pickQuestion(key);
+    if (text !== current || tries === 7) { STATE.lastCategory = key; return text; }
+  }
+  return '';
 }
 async function loadQuestions() {
   try {
@@ -842,9 +844,6 @@ function renderRouter() {
     node.querySelector('.selection-mark').hidden = !selected;
   }
   $('#whyModel').disabled = !d;
-  const choice = $('#modelChoice');
-  choice.hidden = !(phase === 'decided' && d);
-  if (phase === 'decided' && d) choice.textContent = `→ ${t(d.target === 'local' ? 'nLocal' : 'nFrontier')}`;
   $('#emptyExplanation').hidden = !!d;
   $('#scoreStatus').textContent = t(phase === 'asking' ? 'asking' : phase === 'decided' ? 'scoresReady' : 'waitingScores');
   $('#routeSummary').textContent = d ? t(d.target === 'local' ? 'decidedLocal' : 'decidedFrontier') : t('flowHint');
@@ -986,11 +985,14 @@ function renderSettings() {
 }
 
 // ─── Actions ───
-async function route() {
+// route({ fresh: true }) comes from the Route button / Ctrl+Enter: an empty prompt or a prompt
+// the app drew itself is replaced by a new random example. Preset buttons call route() plainly.
+async function route(opts) {
   if (STATE.phase === 'asking') return;
+  const fresh = !!(opts && opts.fresh);
   const requestId = ++STATE.requestId;
   let prompt = promptEl.value.trim();
-  if (!prompt) { prompt = pickAnyQuestion(); promptEl.value = prompt; }
+  if (!prompt || (fresh && prompt === STATE.autoPrompt)) { prompt = pickAnyQuestion(); promptEl.value = prompt; STATE.autoPrompt = prompt; }
   if (!prompt) { invalidateDecision(); setPhase('idle', t('emptyPrompt')); promptEl.focus(); return; }
   STATE.answers = {}; STATE.decision = null;
   STATE.lastRequest = buildRequest(prompt, STATE.signals); STATE.lastResponse = null;
@@ -1081,19 +1083,19 @@ function importSignals(file) {
 }
 
 // ─── Listeners ───
-btnRoute.addEventListener('click', route);
+btnRoute.addEventListener('click', () => route({ fresh: true }));
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && sideSheetEl.open && !document.querySelector('dialog:modal')) closeSideSheet();
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !document.querySelector('dialog:modal')) { e.preventDefault(); route(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !document.querySelector('dialog:modal')) { e.preventDefault(); route({ fresh: true }); }
   if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey && !['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog:modal')) {
-    const p = PRESETS[+e.key - 1]; if (p) { invalidateDecision(); promptEl.value = pickQuestion(p.key); route(); }
+    const p = PRESETS[+e.key - 1]; if (p) { invalidateDecision(); promptEl.value = STATE.autoPrompt = pickQuestion(p.key); route(); }
   }
 });
 presetsEl.addEventListener('click', (e) => {
   const b = e.target.closest('[data-preset]'); if (!b) return;
   if (!isSheetDocked()) closeSideSheet();
   invalidateDecision();
-  promptEl.value = pickQuestion(b.dataset.preset); route();
+  promptEl.value = STATE.autoPrompt = pickQuestion(b.dataset.preset); route();
 });
 document.querySelectorAll('[data-lang-btn]').forEach((b) => b.addEventListener('click', () => { STATE.lang = b.dataset.langBtn; writeStorage(LS.lang, STATE.lang); applyI18n(); }));
 
@@ -1146,7 +1148,7 @@ window.addEventListener('resize', () => { syncSheetLayout(); drawConnections(); 
 // ─── Init ───
 STATE.lang = ['pl', 'en'].includes(readStorage(LS.lang)) ? readStorage(LS.lang) : 'pl';
 STATE.workerUrl = readStorage(LS.worker) || DEFAULT_WORKER_URL;
-STATE.questions = null; STATE.questionsSource = 'none'; STATE.lastQuestion = {};
+STATE.questions = null; STATE.questionsSource = 'none'; STATE.lastQuestion = {}; STATE.autoPrompt = '';
 STATE.signals = loadJSON(LS.signals, null) || structuredClone(DEFAULT_SIGNALS);
 STATE.thresholds = { ...DEFAULT_THRESHOLDS, ...loadJSON(LS.thresholds, {}) };
 renderMode(); applyI18n(); renderRaw(); setPhase('idle', '');

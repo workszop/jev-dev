@@ -245,10 +245,17 @@ try {
   await page.waitForFunction(() => +getComputedStyle(document.querySelector('.model-card[data-selected="false"]')).opacity < 0.5, null, { timeout: 3000 }).catch(() => {});
   const marks = await page.evaluate(() => {
     const sel = document.querySelector('.model-card[data-selected="true"]'), other = document.querySelector('.model-card[data-selected="false"]');
-    const chip = document.querySelector('#modelChoice');
-    return { selectedOutline: getComputedStyle(sel).outlineWidth, badgeVisible: !sel.querySelector('.selection-mark').hidden, otherOpacity: +getComputedStyle(other).opacity, chip: chip.hidden ? '' : chip.textContent };
+    return { selectedOutline: getComputedStyle(sel).outlineWidth, badgeVisible: !sel.querySelector('.selection-mark').hidden, otherOpacity: +getComputedStyle(other).opacity, noChip: !document.querySelector('#modelChoice') };
   });
-  check('chosen model is unmistakable (ring, badge, chip, faded other)', parseFloat(marks.selectedOutline) >= 4 && marks.badgeVisible && marks.otherOpacity < 0.5 && marks.chip.length > 2, marks);
+  check('chosen model is unmistakable (ring, badge, faded other, no heading chip)', parseFloat(marks.selectedOutline) >= 4 && marks.badgeVisible && marks.otherOpacity < 0.5 && marks.noChip, marks);
+  // Pressing Route again on an auto-drawn prompt draws a different one; a typed prompt is kept.
+  const first = await page.inputValue('#prompt');
+  await page.click('#btnRoute'); await waitForDecision();
+  const second = await page.inputValue('#prompt');
+  check('Route again draws a different example', second !== first && second.length > 0, { first: first.slice(0, 40), second: second.slice(0, 40) });
+  await page.fill('#prompt', 'My own typed prompt about nothing in particular.');
+  await page.click('#btnRoute'); await waitForDecision();
+  check('typed prompt is routed unchanged', (await page.inputValue('#prompt')) === 'My own typed prompt about nothing in particular.');
   const geometry = await page.evaluate(() => {
     const w = (id) => document.getElementById(id).getBoundingClientRect().width;
     return { policy: Math.round(w('nPolicy')), jev: Math.round(w('nJev')), icons: ['#nLocal .model-icon', '#nFrontier .model-icon'].every((sel) => document.querySelector(sel)) };

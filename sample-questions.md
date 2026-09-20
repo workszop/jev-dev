@@ -49,8 +49,8 @@ Nothing else in this file is parsed.
 
 - EN: Compare three approaches to retrieval-augmented generation for a legal document corpus (hybrid BM25 + dense, late-interaction rerankers, graph-based retrieval). Discuss latency, citation faithfulness and maintenance cost, and recommend one for a 20-person law firm.
   PL: Porównaj trzy podejścia do RAG dla korpusu dokumentów prawnych (hybryda BM25 + dense, rerankery late-interaction, retrieval oparty na grafie). Omów opóźnienia, wierność cytowań i koszt utrzymania, a potem poleć jedno dla kancelarii zatrudniającej 20 osób.
-- EN: Prove that the sum of the first n odd numbers equals n squared, then explain why the same argument fails for even numbers.
-  PL: Udowodnij, że suma pierwszych n liczb nieparzystych równa się n do kwadratu, a potem wyjaśnij, dlaczego ten sam argument nie działa dla liczb parzystych.
+- EN: Design a migration path from a monolithic payments platform to event-driven services under PSD2 strong customer authentication. Cover data consistency during the cut-over, rollback strategy and how the audit trail stays complete for the regulator.
+  PL: Zaprojektuj ścieżkę migracji monolitycznej platformy płatności do usług sterowanych zdarzeniami przy wymaganiach silnego uwierzytelniania klienta (PSD2). Omów spójność danych podczas przełączenia, strategię wycofania zmian i to, jak ślad audytowy pozostaje kompletny dla regulatora.
 - EN: Acme Robotics (fictional) has 3 factories, 12 % defect rate and a 6-week backlog. Design a 90-day plan to halve defects without adding headcount, with a risk register and the assumptions you had to make.
   PL: Acme Robotics (firma fikcyjna) ma 3 fabryki, 12 % wadliwych sztuk i 6 tygodni zaległości. Zaprojektuj 90-dniowy plan zmniejszenia wad o połowę bez zwiększania zatrudnienia, z rejestrem ryzyk i listą przyjętych założeń.
 - EN: What changed in the EU AI Act implementation timeline in 2026?
