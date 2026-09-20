@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev Router</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23FFD500'/%3E%3Cpath d='M10 32h18l8-14 8 28 8-14h2' fill='none' stroke='%231C1917' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+/* ─── Tokens (edulab Editorial Color) ─── */
+:root {
+  --font-display: 'Outfit', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-sans:    'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono:    'Roboto Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --paper: #FFFFFF; --paper-2: #FBF7E6; --paper-3: #F5EDCB; --surface: #FFFFFF;
+  --ink: #1C1917; --ink-2: #57534E; --ink-3: #948C82; --line: #EDE7D2; --line-2: #DDD4B6;
+  --yellow: #FFD500; --yellow-600: #F0C800; --yellow-soft: #FFD500; --yellow-ink: #1C1917;
+  --blue: #1E8FC2; --blue-600: #177AA8; --blue-soft: #1E8FC2; --blue-ink: #FFFFFF;
+  --green: #00A651; --green-600: #009444; --green-soft: #00A651; --green-ink: #FFFFFF;
+  --red: #E5322D; --red-600: #C92823; --red-soft: #E5322D; --red-ink: #FFFFFF;
+  --primary: var(--yellow); --on-primary: #1C1917;
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--yellow) 45%, transparent);
+  --header-blur-bg: rgba(255, 255, 255, 0.85);
+  --track: rgba(33,30,26,.12);
+  --dark-line: rgba(255,255,255,.14);
+  --dark-muted: rgba(255,255,255,.55);
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(33,30,26,.06), 0 1px 1px rgba(33,30,26,.04);
+  --shadow-md: 0 4px 16px rgba(33,30,26,.08), 0 1px 3px rgba(33,30,26,.05);
+  --shadow-lg: 0 16px 40px rgba(33,30,26,.12), 0 3px 8px rgba(33,30,26,.06);
+  --shadow-primary: 0 8px 22px color-mix(in srgb, var(--yellow) 30%, transparent);
+  --body: 15px; --body-sm: 13.5px; --caption: 12.5px; --overline: 11px;
+}
+
+/* ─── Base ─── */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); font-size: var(--body); line-height: 1.5; display: flex; flex-direction: column; min-height: 100vh; }
+h1, h2, h3 { margin: 0; font-family: var(--font-display); color: var(--ink); }
+p { margin: 0; color: var(--ink-2); }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, textarea:focus-visible, input:focus-visible, select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.overline { font-family: var(--font-mono); font-weight: 500; font-size: var(--overline); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--ink-3); }
+.hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ─── Header ─── */
+.edu-header { position: sticky; top: 0; z-index: 50; width: 100%; background: var(--header-blur-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.edu-header-inner { padding: 6px 24px; display: flex; align-items: center; gap: 12px; }
+.edu-logo { width: 56px; height: 56px; display: block; margin-right: -6px; }
+.edu-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -.02em; color: var(--ink); }
+.header-title { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--ink-2); margin-left: 10px; padding-left: 14px; border-left: 1px solid var(--line-2); }
+.header-spacer { flex: 1; }
+.edu-seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--paper-2); border-radius: var(--r-pill); }
+.edu-seg button { border: none; background: transparent; padding: 6px 12px; border-radius: var(--r-pill); font-family: var(--font-sans); font-weight: 600; font-size: 13px; color: var(--ink-2); }
+.edu-seg button.active { background: var(--yellow); color: var(--yellow-ink); }
+.chip { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; padding: 4px 10px; border-radius: var(--r-pill); background: var(--blue-soft); color: var(--blue-ink); white-space: nowrap; }
+.chip.yellow { background: var(--yellow-soft); color: var(--yellow-ink); }
+.chip.green { background: var(--green-soft); color: var(--green-ink); }
+.chip.red { background: var(--red-soft); color: var(--red-ink); }
+.chip.sand { background: var(--paper-3); color: var(--ink-2); }
+.chip.ink { background: var(--ink); color: var(--paper); }
+
+/* ─── Buttons ─── */
+.btn { font-family: var(--font-display); font-weight: 600; border: none; border-radius: var(--r-pill); padding: 10px 18px; background: var(--paper-2); color: var(--ink); transition: background .15s; display: inline-flex; align-items: center; gap: 8px; }
+.btn:hover { background: var(--paper-3); }
+.btn.primary { background: var(--yellow); color: var(--on-primary); box-shadow: var(--shadow-primary); }
+.btn.primary:hover { background: var(--yellow-600); }
+.btn.primary:disabled { opacity: .55; cursor: wait; box-shadow: none; }
+.btn.small { padding: 6px 12px; font-size: 13px; }
+.btn.danger { background: var(--red); color: var(--red-ink); }
+.btn.icon { padding: 6px; border-radius: var(--r-pill); background: transparent; color: var(--ink-2); }
+.btn.icon:hover { background: var(--paper-2); }
+.btn svg { width: 16px; height: 16px; }
+kbd { font-family: var(--font-mono); font-size: 11px; background: var(--paper-3); padding: 1px 6px; border-radius: var(--r-xs); color: var(--ink-2); }
+
+/* ─── Layout ─── */
+main { flex: 1; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.25fr) minmax(300px, 1.1fr); gap: 18px; padding: 18px 24px; align-content: start; }
+.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px 18px; box-shadow: var(--shadow-sm); }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.card-head h2 { font-size: 17px; font-weight: 600; }
+footer.bottom { padding: 0 24px 24px; display: grid; gap: 14px; }
+
+/* ─── Prompt column ─── */
+textarea { width: 100%; min-height: 150px; resize: vertical; font: inherit; font-size: 14.5px; line-height: 1.5; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--paper); color: var(--ink); }
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.preset { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-md); padding: 10px 12px; transition: background .15s; }
+.preset:hover { background: var(--paper-2); }
+.preset .overline { display: block; margin-bottom: 3px; font-size: 10px; }
+.preset span.desc { font-size: 12.5px; color: var(--ink-2); display: block; line-height: 1.35; }
+.progress { height: 6px; border-radius: var(--r-pill); background: var(--track); overflow: hidden; margin-top: 10px; opacity: 0; transition: opacity .2s; }
+.progress > i { display: block; height: 100%; width: 40%; background: var(--yellow); border-radius: var(--r-pill); animation: slide 1s linear infinite; }
+body[data-phase="asking"] .progress { opacity: 1; }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+.route-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.status-line { font-size: 13px; color: var(--ink-2); flex: 1; min-width: 120px; }
+body[data-phase="error"] .status-line { color: var(--red); }
+
+/* ─── Signals ─── */
+.signals { display: flex; flex-direction: column; gap: 10px; }
+.signal { border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; background: var(--surface); transition: background .25s, border-color .25s; }
+.signal[data-state="fire"] { background: var(--paper-2); border-color: var(--line-2); }
+.signal[data-enabled="false"] { opacity: .5; }
+.signal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.signal-name { font-family: var(--font-display); font-weight: 600; font-size: 15px; flex: 1; min-width: 0; }
+.signal-actions { display: flex; gap: 2px; }
+.signal-actions button { padding: 4px; }
+.signal-actions svg { width: 15px; height: 15px; }
+.state-chip { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; padding: 3px 9px; border-radius: var(--r-pill); background: var(--paper-3); color: var(--ink-2); }
+.signal[data-state="fire"] .state-chip { background: var(--red); color: var(--red-ink); }
+.signal[data-state="fire"][data-policy^="soft"] .state-chip, .signal[data-state="fire"][data-policy="lock_frontier"] .state-chip { background: var(--blue); color: var(--blue-ink); }
+.signal[data-state="clear"] .state-chip { background: var(--green); color: var(--green-ink); }
+.signal[data-state="uncertain"] .state-chip { background: var(--yellow); color: var(--yellow-ink); }
+.signal-q { font-size: 12.5px; color: var(--ink-3); margin-bottom: 8px; line-height: 1.4; }
+.bar { position: relative; height: 12px; border-radius: var(--r-pill); background: var(--track); overflow: visible; }
+.bar > i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: var(--r-pill); background: var(--blue); transition: width .5s cubic-bezier(.32,.72,.32,1); }
+.bar > b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink-3); border-radius: 1px; }
+.gauge { display: grid; gap: 4px; }
+.gauge-track { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; height: 12px; }
+.gauge-track > i { border-radius: var(--r-xs); background: var(--track); position: relative; overflow: hidden; }
+.gauge-track > i > s { position: absolute; inset: 0; background: var(--blue); transform-origin: left; transform: scaleX(0); transition: transform .5s cubic-bezier(.32,.72,.32,1); }
+.gauge-legend { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+.gauge-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.signal-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2); flex-wrap: wrap; }
+.signal-foot .value { color: var(--ink); font-weight: 500; }
+.signal-foot .policy { margin-left: auto; }
+.signal-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+/* ─── Router diagram ─── */
+.router { display: grid; grid-template-columns: 1fr 22px 1fr 22px 1fr; grid-template-rows: auto auto; gap: 8px 0; align-items: center; }
+.node { border: 1px solid var(--line-2); border-radius: var(--r-md); padding: 10px 12px; background: var(--surface); transition: background .3s, color .3s, border-color .3s; min-width: 0; }
+.node .overline { font-size: 10px; display: block; margin-bottom: 2px; color: inherit; opacity: .75; }
+.node .label { font-family: var(--font-display); font-weight: 600; font-size: 14px; }
+.node .sub { font-size: 12px; color: inherit; opacity: .8; }
+.node.is-active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.node.target.is-active { background: var(--yellow); color: var(--yellow-ink); border-color: var(--yellow); }
+.node.jev.is-active { background: var(--blue); color: var(--blue-ink); border-color: var(--blue); }
+.node.target.is-off { opacity: .45; }
+.arrow { height: 2px; background: var(--line-2); position: relative; transition: background .3s; }
+.arrow::after { content: ''; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left-color: var(--line-2); transition: border-color .3s; }
+.arrow.is-active { background: var(--ink); }
+.arrow.is-active::after { border-left-color: var(--ink); }
+.n-prompt { grid-column: 1; grid-row: 1 / span 2; }
+.a1 { grid-column: 2; grid-row: 1 / span 2; }
+.n-jev { grid-column: 3; grid-row: 1; }
+.n-policy { grid-column: 3; grid-row: 2; }
+.a2 { grid-column: 4; grid-row: 1; }
+.a3 { grid-column: 4; grid-row: 2; }
+.n-local { grid-column: 5; grid-row: 1; }
+.n-frontier { grid-column: 5; grid-row: 2; }
+.response { margin-top: 14px; border-radius: var(--r-md); padding: 14px 16px; background: var(--paper-2); display: none; animation: fade .3s ease-out; }
+body[data-phase="decided"] .response { display: block; }
+.response.local { background: var(--green); color: var(--green-ink); }
+.response.frontier { background: var(--blue); color: var(--blue-ink); }
+.response h3 { color: inherit; font-size: 16px; margin-bottom: 4px; }
+.response .model { font-family: var(--font-mono); font-size: 12px; opacity: .85; }
+.response .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.response .tags span { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; padding: 3px 9px; border-radius: var(--r-pill); background: var(--paper); color: var(--ink); }
+.response ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+.response .sim { font-size: 12.5px; opacity: .8; margin-top: 8px; font-style: italic; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ─── Log & raw ─── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); padding: 6px 8px; border-bottom: 1px solid var(--line); font-weight: 500; }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.prompt-cell { max-width: 480px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+pre { font-family: var(--font-mono); font-size: 12px; line-height: 1.45; background: var(--paper-2); border-radius: var(--r-md); padding: 12px 14px; overflow: auto; max-height: 360px; margin: 10px 0 0; color: var(--ink); }
+.raw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ─── Dialogs & forms ─── */
+dialog { border: none; border-radius: var(--r-xl); padding: 0; box-shadow: var(--shadow-lg); width: min(560px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); }
+dialog::backdrop { background: rgba(28,25,23,.45); }
+.dlg { padding: 22px 24px; display: grid; gap: 14px; }
+.dlg h2 { font-size: 20px; }
+.field { display: grid; gap: 5px; }
+.field label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-2); }
+.field input[type="text"], .field input[type="url"], .field select, .field textarea { font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--paper); color: var(--ink); width: 100%; min-height: 0; }
+.field textarea { min-height: 70px; }
+.field .hint { font-size: 12px; color: var(--ink-3); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dlg-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.range-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+input[type="range"] { width: 100%; accent-color: var(--yellow); }
+.range-val { font-family: var(--font-mono); font-size: 13px; min-width: 40px; text-align: right; }
+.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.toggle input { accent-color: var(--yellow); }
+
+/* ─── Responsive ─── */
+@media (max-width: 1100px) { main { grid-template-columns: 1fr 1fr; } .col.right { grid-column: 1 / -1; } }
+@media (max-width: 768px) {
+  main { grid-template-columns: 1fr; padding: 14px 16px; }
+  .col.right { grid-column: auto; }
+  footer.bottom { padding: 0 16px 16px; }
+  .edu-header-inner { padding: 6px 16px; }
+  .header-title { display: none; }
+  .raw-grid { grid-template-columns: 1fr; }
+  .router { grid-template-columns: 1fr 14px 1fr 14px 1fr; }
+  .node { padding: 8px; }
+  .node .sub { display: none; }
+}
+</style>
+</head>
+<body class="edu" data-phase="idle" data-mock="false" data-lang="pl">
+
+<header class="edu-header">
+  <div class="edu-header-inner">
+    <img class="edu-logo" alt="edulab" src="data:image/png;base64,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">
+    <span class="edu-wordmark">edulab</span>
+    <span class="header-title" data-t="appTitle">Jev Router</span>
+    <span class="header-spacer"></span>
+    <span id="mockBadge" class="chip sand hidden" data-t="mockBadge">mock</span>
+    <button class="btn icon" id="btnSettings" data-t-title="settings" title="Settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
+    <div class="edu-seg" role="group" aria-label="Language">
+      <button data-lang-btn="pl" class="active">PL</button>
+      <button data-lang-btn="en">EN</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ─── Left: prompt ─── -->
+  <section class="col left">
+    <div class="card">
+      <div class="card-head"><h2 data-t="promptTitle">Prompt użytkownika</h2><span class="chip ink">1</span></div>
+      <textarea id="prompt" data-t-placeholder="promptPlaceholder" placeholder="Wpisz prompt..."></textarea>
+      <div class="route-row">
+        <button class="btn primary" id="btnRoute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-t="route">Routuj</span></button>
+        <kbd>Ctrl</kbd><kbd>Enter</kbd>
+        <span class="status-line" id="status" role="status" aria-live="polite"></span>
+      </div>
+      <div class="progress" aria-hidden="true"><i></i></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2 data-t="presetsTitle">Przykłady</h2></div>
+      <div class="presets" id="presets"></div>
+    </div>
+  </section>
+
+  <!-- ─── Middle: signals ─── -->
+  <section class="col middle">
+    <div class="card">
+      <div class="card-head"><h2 data-t="signalsTitle">Sygnały (pytania do Jev)</h2><span class="chip ink">2</span></div>
+      <p class="muted" style="font-size:13px;margin-bottom:12px" data-t="signalsLead">Każdy sygnał to jedno typowane pytanie. Wszystkie idą do Jev w jednym żądaniu.</p>
+      <div class="signals" id="signals"></div>
+      <div class="signal-tools">
+        <button class="btn small" id="btnAddSignal">+ <span data-t="addSignal">Dodaj sygnał</span></button>
+        <button class="btn small" id="btnExport" data-t="exportSignals">Eksport JSON</button>
+        <button class="btn small" id="btnImport" data-t="importSignals">Import JSON</button>
+        <input type="file" id="importFile" accept="application/json" class="hidden">
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Right: router ─── -->
+  <section class="col right">
+    <div class="card">
+      <div class="card-head"><h2 data-t="routerTitle">Decyzja routera</h2><span class="chip ink">3</span></div>
+      <div class="router" id="router" data-target="none">
+        <div class="node n-prompt" id="nPrompt"><span class="overline" data-t="nPromptOver">wejście</span><div class="label" data-t="nPrompt">Prompt</div><div class="sub mono" id="nPromptSub">0 tok</div></div>
+        <div class="arrow a1" id="a1"></div>
+        <div class="node jev n-jev" id="nJev"><span class="overline">TypeSafe</span><div class="label">Jev</div><div class="sub" id="nJevSub"></div></div>
+        <div class="node n-policy" id="nPolicy"><span class="overline" data-t="nPolicyOver">twój kod</span><div class="label" data-t="nPolicy">Polityka</div><div class="sub" id="nPolicySub"></div></div>
+        <div class="arrow a2" id="a2"></div>
+        <div class="arrow a3" id="a3"></div>
+        <div class="node target n-local" id="nLocal"><span class="overline" data-t="nLocalOver">lokalnie</span><div class="label" data-t="nLocal">Mały model</div><div class="sub mono">gemma4:12b</div></div>
+        <div class="node target n-frontier" id="nFrontier"><span class="overline" data-t="nFrontierOver">zewnętrznie</span><div class="label" data-t="nFrontier">Model frontier</div><div class="sub mono">gpt-5.6-luna</div></div>
+      </div>
+      <div class="response" id="response"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="bottom">
+  <div class="card">
+    <div class="card-head"><h2 data-t="logTitle">Dziennik decyzji</h2><button class="btn small" id="btnClearLog" data-t="clearLog">Wyczyść</button></div>
+    <table>
+      <thead><tr><th data-t="thTime">Czas</th><th data-t="thPrompt">Prompt</th><th data-t="thTarget">Cel</th><th data-t="thFired">Sygnały</th><th data-t="thTokens">Tokeny</th></tr></thead>
+      <tbody id="log"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <details id="rawDetails">
+      <summary data-t="rawTitle">Surowe żądanie i odpowiedź Jev</summary>
+      <div class="raw-grid">
+        <div><span class="overline" data-t="rawReq">żądanie</span><pre id="rawRequest">{}</pre></div>
+        <div><span class="overline" data-t="rawRes">odpowiedź</span><pre id="rawResponse">{}</pre></div>
+      </div>
+    </details>
+  </div>
+</footer>
+
+<!-- ─── Settings dialog ─── -->
+<dialog id="dlgSettings">
+  <form method="dialog" class="dlg">
+    <h2 data-t="settings">Ustawienia</h2>
+    <div class="field">
+      <label for="workerUrl">Worker URL</label>
+      <input type="url" id="workerUrl" placeholder="https://jev-router.andrzey-jankowski.workers.dev/">
+      <span class="hint" data-t="workerHint">Puste pole = tryb mock (bez wywołań Jev).</span>
+    </div>
+    <div class="field">
+      <label data-t="thNoulYes">Noul: próg TAK</label>
+      <div class="range-row"><input type="range" id="thNoulYes" min="0.5" max="0.95" step="0.05"><span class="range-val" id="thNoulYesVal"></span></div>
+    </div>
+    <div class="field">
+      <label data-t="thNoulNo">Noul: próg NIE</label>
+      <div class="range-row"><input type="range" id="thNoulNo" min="0.05" max="0.5" step="0.05"><span class="range-val" id="thNoulNoVal"></span></div>
+    </div>
+    <div class="field">
+      <label data-t="thScoreHigh">Score: próg "wysoki"</label>
+      <div class="range-row"><input type="range" id="thScoreHigh" min="0.5" max="2" step="0.1"><span class="range-val" id="thScoreHighVal"></span></div>
+    </div>
+    <div class="field">
+      <label data-t="thMinConf">Minimalna pewność (confidence)</label>
+      <div class="range-row"><input type="range" id="thMinConf" min="0" max="0.9" step="0.05"><span class="range-val" id="thMinConfVal"></span></div>
+    </div>
+    <div class="dlg-actions">
+      <button type="button" class="btn small danger" id="btnResetSignals" data-t="resetSignals">Przywróć domyślne sygnały</button>
+      <button type="submit" class="btn primary" data-t="close">Zamknij</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ─── Signal editor dialog ─── -->
+<dialog id="dlgSignal">
+  <form class="dlg" id="signalForm">
+    <h2 id="signalFormTitle" data-t="addSignal">Dodaj sygnał</h2>
+    <input type="hidden" id="sigId">
+    <div class="two">
+      <div class="field"><label for="sigNamePl" data-t="namePl">Nazwa (PL)</label><input type="text" id="sigNamePl" required></div>
+      <div class="field"><label for="sigNameEn" data-t="nameEn">Nazwa (EN)</label><input type="text" id="sigNameEn" required></div>
+    </div>
+    <div class="two">
+      <div class="field"><label for="sigType" data-t="type">Typ</label>
+        <select id="sigType"><option value="noul">Noul (tak/nie)</option><option value="score">Score (skala)</option></select></div>
+      <div class="field"><label for="sigPolicy" data-t="policy">Polityka</label>
+        <select id="sigPolicy">
+          <option value="lock_local" data-t="pLockLocal">Blokada: lokalnie</option>
+          <option value="lock_frontier" data-t="pLockFrontier">Blokada: frontier</option>
+          <option value="soft_frontier" data-t="pSoftFrontier">Głos: frontier</option>
+          <option value="soft_local" data-t="pSoftLocal">Głos: lokalnie</option>
+        </select></div>
+    </div>
+    <div class="field"><label for="sigInstr" data-t="instructions">Pytanie (EN, instructions)</label><textarea id="sigInstr" required></textarea>
+      <span class="hint" data-t="instrHint">Jev działa najlepiej po angielsku. Odnoś się do stanu jako "the prompt".</span></div>
+    <div class="field" id="noulCriteria">
+      <div class="two">
+        <div class="field"><label for="sigTrue" data-t="critTrue">Co znaczy TAK</label><input type="text" id="sigTrue"></div>
+        <div class="field"><label for="sigFalse" data-t="critFalse">Co znaczy NIE</label><input type="text" id="sigFalse"></div>
+      </div>
+    </div>
+    <div class="field" id="scoreCriteria">
+      <label for="sigLevels" data-t="critLevels">Poziomy (jeden na linię, od najniższego)</label>
+      <textarea id="sigLevels"></textarea>
+    </div>
+    <div class="dlg-actions">
+      <button type="button" class="btn small" id="btnSignalCancel" data-t="cancel">Anuluj</button>
+      <button type="submit" class="btn primary" data-t="save">Zapisz</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+// ─── Constants ───
+const LS = { lang: 'jevRouter.lang', worker: 'jevRouter.workerUrl', signals: 'jevRouter.signals', thresholds: 'jevRouter.thresholds' };
+const MODEL = 'jev-latest';
+const LOCAL_MODEL = 'gemma4:12b';
+const FRONTIER_MODEL = 'gpt-5.6-luna';
+const DEFAULT_THRESHOLDS = { noulYes: 0.65, noulNo: 0.35, scoreHigh: 1.5, minConfidence: 0.5 };
+
+const DEFAULT_SIGNALS = [
+  { id: 'pii', enabled: true, type: 'noul', policy: 'lock_local',
+    name: { pl: 'Dane osobowe (PII)', en: 'Personal identification data' },
+    instructions: 'Does the prompt contain personal identification data about a specific person, such as full names combined with identifiers, national ID or PESEL numbers, addresses, phone numbers, email addresses, dates of birth, health or financial details?',
+    criteria: { true: 'The prompt includes data that identifies or could identify a real individual.', false: 'No personal data, or only generic or clearly fictional examples.' } },
+  { id: 'proprietary', enabled: true, type: 'noul', policy: 'lock_local',
+    name: { pl: 'Dane firmowe (poufne)', en: 'Company proprietary data' },
+    instructions: 'Does the prompt include or ask to process company-internal or proprietary information, such as internal documents, client lists, contracts, financial figures, source code, unreleased plans or anything marked confidential?',
+    criteria: { true: 'The prompt contains or refers to internal, confidential or proprietary company material.', false: 'The prompt deals only with public or generic information.' } },
+  { id: 'complexity', enabled: true, type: 'score', policy: 'soft_frontier',
+    name: { pl: 'Złożoność zadania', en: 'Task complexity' },
+    instructions: 'How complex is the task the prompt asks for, in terms of reasoning steps, constraints and synthesis required?',
+    criteria: ['Simple: a single-step answer, short rewrite, lookup or casual question.', 'Moderate: several steps or constraints, but a standard, well-known procedure.', 'High: multi-step reasoning, trade-offs, long-form synthesis or novel problem solving.'] },
+  { id: 'knowledge', enabled: true, type: 'score', policy: 'soft_frontier',
+    name: { pl: 'Wymagana wiedza', en: 'Knowledge depth required' },
+    instructions: 'How much specialised or up-to-date knowledge is needed to answer the prompt well?',
+    criteria: ['Low: everyday or general knowledge that a small model handles reliably.', 'Medium: domain knowledge at an educated generalist level.', 'High: expert, niche, highly technical or very recent knowledge.'] },
+];
+
+const PRESETS = [
+  { key: 'pii', expect: 'local', pl: 'Dane osobowe', en: 'Personal data', desc: { pl: 'PESEL i adres w treści', en: 'PESEL and address inside' },
+    text: 'Napisz uprzejmą odpowiedź do klienta Jana Kowalskiego, PESEL 90010112345, zamieszkałego przy ul. Długiej 12, Kraków, tel. 601 222 333, że jego reklamacja została przyjęta.' },
+  { key: 'proprietary', expect: 'local', pl: 'Dane firmowe', en: 'Company data', desc: { pl: 'poufne wyniki kwartalne', en: 'confidential quarterly results' },
+    text: 'Here is our internal Q3 board deck (CONFIDENTIAL): revenue 4.2M EUR, churn 9%, planned layoffs in the Wrocław office. Summarise the key risks for the CEO in five bullet points.' },
+  { key: 'trivia', expect: 'local', pl: 'Proste pytanie', en: 'Simple question', desc: { pl: 'niska złożoność, niska wiedza', en: 'low complexity, low knowledge' },
+    text: 'What is the capital of Portugal and what is one dish I should try there?' },
+  { key: 'deep', expect: 'frontier', pl: 'Głęboka analiza', en: 'Deep analysis', desc: { pl: 'wysoka złożoność i wiedza', en: 'high complexity and knowledge' },
+    text: 'Compare the EU AI Act obligations for general-purpose AI providers with the NIST AI RMF, identify where a mid-size Polish SaaS company would face conflicting requirements, and propose a phased compliance roadmap with trade-offs.' },
+  { key: 'mixed', expect: 'local', pl: 'Mieszany', en: 'Mixed', desc: { pl: 'złożone, ale z PII', en: 'complex, but contains PII' },
+    text: 'Analyse the attached medical history of patient Anna Nowak (born 1978-03-04, PESEL 78030412345): recurrent migraines, hypertension, metformin 500mg. Propose a differential diagnosis and a treatment plan with the latest guideline evidence.' },
+  { key: 'edge', expect: 'local', pl: 'Niejednoznaczny', en: 'Ambiguous', desc: { pl: 'gdzie ląduje?', en: 'where does it go?' },
+    text: 'Explain to a colleague how our team usually handles a customer refund when the order came from the marketplace, and draft a short email template.' },
+];
+
+// ─── i18n ───
+const T = {
+  pl: {
+    appTitle: 'Jev Router', mockBadge: 'mock', settings: 'Ustawienia', promptTitle: 'Prompt użytkownika', promptPlaceholder: 'Wpisz prompt, który trafiłby do asystenta AI...',
+    route: 'Routuj', presetsTitle: 'Przykłady', signalsTitle: 'Sygnały (pytania do Jev)', signalsLead: 'Każdy sygnał to jedno typowane pytanie. Wszystkie idą do Jev w jednym żądaniu, a polityka w kodzie podejmuje decyzję.',
+    addSignal: 'Dodaj sygnał', editSignal: 'Edytuj sygnał', exportSignals: 'Eksport JSON', importSignals: 'Import JSON', routerTitle: 'Decyzja routera',
+    nPromptOver: 'wejście', nPrompt: 'Prompt', nPolicyOver: 'twój kod', nPolicy: 'Polityka', nLocalOver: 'lokalnie', nLocal: 'Mały model', nFrontierOver: 'zewnętrznie', nFrontier: 'Model frontier',
+    logTitle: 'Dziennik decyzji', clearLog: 'Wyczyść', thTime: 'Czas', thPrompt: 'Prompt', thTarget: 'Cel', thFired: 'Sygnały', thTokens: 'Tokeny',
+    rawTitle: 'Surowe żądanie i odpowiedź Jev', rawReq: 'żądanie', rawRes: 'odpowiedź', workerHint: 'Puste pole = tryb mock (bez prawdziwych wywołań Jev).',
+    thNoulYes: 'Noul: próg TAK', thNoulNo: 'Noul: próg NIE', thScoreHigh: 'Score: próg "wysoki"', thMinConf: 'Minimalna pewność (confidence)', resetSignals: 'Przywróć domyślne sygnały', close: 'Zamknij',
+    namePl: 'Nazwa (PL)', nameEn: 'Nazwa (EN)', type: 'Typ', policy: 'Polityka', pLockLocal: 'Blokada: lokalnie', pLockFrontier: 'Blokada: frontier', pSoftFrontier: 'Głos: frontier', pSoftLocal: 'Głos: lokalnie',
+    instructions: 'Pytanie (EN, instructions)', instrHint: 'Jev działa najlepiej po angielsku. Odnoś się do stanu jako "the prompt".', critTrue: 'Co znaczy TAK', critFalse: 'Co znaczy NIE', critLevels: 'Poziomy (jeden na linię, od najniższego)', cancel: 'Anuluj', save: 'Zapisz',
+    stFire: 'aktywny', stClear: 'czysty', stUncertain: 'niepewny', stIdle: 'czeka', local: 'lokalnie', frontier: 'frontier',
+    emptyPrompt: 'Wpisz prompt.', asking: 'Jev ocenia sygnały...', decidedLocal: 'Decyzja: mały model lokalny.', decidedFrontier: 'Decyzja: model frontier.', errorPrefix: 'Błąd: ',
+    questions: 'pytań', tokens: 'tok', respLocal: 'Odpowiedź z lokalnego modelu', respFrontier: 'Odpowiedź z modelu frontier', simNote: 'Symulacja: właściwe wywołanie modelu nie jest wykonywane.',
+    tagPrivate: 'dane zostają w firmie', tagExternal: 'dane opuszczają firmę', tagCheap: 'koszt ~0', tagPaid: 'koszt płatny', tagFast: 'niska latencja', tagSlow: 'wyższa latencja',
+    rLock: 'blokada', rVote: 'głos', rUncertainSafe: 'niepewny sygnał, bezpieczna strona', rDefault: 'brak sygnałów za frontier, domyślnie lokalnie', rNoQuestions: 'brak aktywnych sygnałów',
+    confirmDelete: 'Usunąć ten sygnał?', importBad: 'Nieprawidłowy plik JSON.',
+  },
+  en: {
+    appTitle: 'Jev Router', mockBadge: 'mock', settings: 'Settings', promptTitle: 'User prompt', promptPlaceholder: 'Type a prompt that would go to an AI assistant...',
+    route: 'Route', presetsTitle: 'Examples', signalsTitle: 'Signals (questions for Jev)', signalsLead: 'Each signal is one typed question. All of them go to Jev in a single request, and the policy in code makes the decision.',
+    addSignal: 'Add signal', editSignal: 'Edit signal', exportSignals: 'Export JSON', importSignals: 'Import JSON', routerTitle: 'Router decision',
+    nPromptOver: 'input', nPrompt: 'Prompt', nPolicyOver: 'your code', nPolicy: 'Policy', nLocalOver: 'on-premise', nLocal: 'Small model', nFrontierOver: 'external', nFrontier: 'Frontier model',
+    logTitle: 'Decision log', clearLog: 'Clear', thTime: 'Time', thPrompt: 'Prompt', thTarget: 'Target', thFired: 'Signals', thTokens: 'Tokens',
+    rawTitle: 'Raw Jev request and response', rawReq: 'request', rawRes: 'response', workerHint: 'Empty = mock mode (no real Jev calls).',
+    thNoulYes: 'Noul: YES threshold', thNoulNo: 'Noul: NO threshold', thScoreHigh: 'Score: "high" threshold', thMinConf: 'Minimum confidence', resetSignals: 'Restore default signals', close: 'Close',
+    namePl: 'Name (PL)', nameEn: 'Name (EN)', type: 'Type', policy: 'Policy', pLockLocal: 'Lock: local', pLockFrontier: 'Lock: frontier', pSoftFrontier: 'Vote: frontier', pSoftLocal: 'Vote: local',
+    instructions: 'Question (EN, instructions)', instrHint: 'Jev is strongest in English. Refer to the state as "the prompt".', critTrue: 'What YES means', critFalse: 'What NO means', critLevels: 'Levels (one per line, lowest first)', cancel: 'Cancel', save: 'Save',
+    stFire: 'fired', stClear: 'clear', stUncertain: 'uncertain', stIdle: 'idle', local: 'local', frontier: 'frontier',
+    emptyPrompt: 'Type a prompt first.', asking: 'Jev is evaluating the signals...', decidedLocal: 'Decision: local small model.', decidedFrontier: 'Decision: frontier model.', errorPrefix: 'Error: ',
+    questions: 'questions', tokens: 'tok', respLocal: 'Response from the local model', respFrontier: 'Response from the frontier model', simNote: 'Simulation: the actual model call is not made.',
+    tagPrivate: 'data stays in-house', tagExternal: 'data leaves the company', tagCheap: 'cost ~0', tagPaid: 'paid tokens', tagFast: 'low latency', tagSlow: 'higher latency',
+    rLock: 'lock', rVote: 'vote', rUncertainSafe: 'uncertain signal, safe side', rDefault: 'no frontier votes, default local', rNoQuestions: 'no enabled signals',
+    confirmDelete: 'Delete this signal?', importBad: 'Invalid JSON file.',
+  },
+};
+const t = (key) => (T[STATE.lang] && T[STATE.lang][key]) || T.en[key] || key;
+
+// ─── State ───
+const STATE = {
+  lang: 'pl', workerUrl: '', mock: true,
+  signals: [], thresholds: { ...DEFAULT_THRESHOLDS },
+  phase: 'idle', answers: {}, decision: null, lastRequest: null, lastResponse: null, log: [],
+};
+
+// ─── DOM refs ───
+const $ = (sel) => document.querySelector(sel);
+const promptEl = $('#prompt'), btnRoute = $('#btnRoute'), statusEl = $('#status'), presetsEl = $('#presets');
+const signalsEl = $('#signals'), routerEl = $('#router'), responseEl = $('#response'), logEl = $('#log');
+const rawReqEl = $('#rawRequest'), rawResEl = $('#rawResponse'), mockBadge = $('#mockBadge');
+const dlgSettings = $('#dlgSettings'), dlgSignal = $('#dlgSignal'), signalForm = $('#signalForm');
+
+// ─── Helpers: persistence ───
+function loadJSON(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
+function saveJSON(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
+function persistSignals() { saveJSON(LS.signals, STATE.signals); }
+function persistThresholds() { saveJSON(LS.thresholds, STATE.thresholds); }
+
+// ─── Helpers: policy engine (pure) ───
+function signalState(signal, answer, th) {
+  if (!answer) return 'idle';
+  if (signal.type === 'noul') {
+    const p = answer.noul;
+    if (p >= th.noulYes) return 'fire';
+    if (p <= th.noulNo) return 'clear';
+    return 'uncertain';
+  }
+  if (answer.confidence < th.minConfidence) return 'uncertain';
+  return answer.score >= th.scoreHigh ? 'fire' : 'clear';
+}
+
+function decide(signals, answers, th) {
+  const enabled = signals.filter((s) => s.enabled);
+  const rows = enabled.map((s) => ({ signal: s, state: signalState(s, answers[s.id], th) }));
+  const reasons = [];
+  const locks = [], votes = [], uncertain = [];
+  if (!enabled.length) return { target: 'local', locks, votes, uncertain, reasons: [{ key: 'rNoQuestions' }] };
+
+  let target = null;
+  for (const r of rows) {
+    if (r.state === 'uncertain') uncertain.push(r.signal.id);
+    if (r.signal.policy === 'lock_local' && (r.state === 'fire' || r.state === 'uncertain')) {
+      locks.push(r.signal.id);
+      reasons.push({ key: r.state === 'fire' ? 'rLock' : 'rUncertainSafe', id: r.signal.id, to: 'local' });
+      target = 'local';
+    }
+  }
+  if (!target) {
+    for (const r of rows) {
+      if (r.signal.policy === 'lock_frontier' && r.state === 'fire') {
+        locks.push(r.signal.id); reasons.push({ key: 'rLock', id: r.signal.id, to: 'frontier' }); target = 'frontier';
+      }
+    }
+  }
+  if (!target) {
+    for (const r of rows) {
+      if (r.state !== 'fire') continue;
+      if (r.signal.policy === 'soft_frontier') { votes.push(r.signal.id); reasons.push({ key: 'rVote', id: r.signal.id, to: 'frontier' }); }
+      if (r.signal.policy === 'soft_local') { votes.push(r.signal.id); reasons.push({ key: 'rVote', id: r.signal.id, to: 'local' }); }
+    }
+    const frontierVotes = reasons.filter((r) => r.key === 'rVote' && r.to === 'frontier').length;
+    const localVotes = reasons.filter((r) => r.key === 'rVote' && r.to === 'local').length;
+    target = frontierVotes > 0 && frontierVotes >= localVotes ? 'frontier' : 'local';
+    if (target === 'local' && !localVotes) reasons.push({ key: 'rDefault' });
+  }
+  return { target, locks, votes, uncertain, reasons };
+}
+
+// ─── Helpers: Jev request ───
+function buildRequest(prompt, signals) {
+  const questions = {};
+  for (const s of signals) {
+    if (!s.enabled) continue;
+    const q = { type: s.type, instructions: s.instructions };
+    if (s.type === 'noul') { if (s.criteria && (s.criteria.true || s.criteria.false)) q.criteria = s.criteria; }
+    else q.criteria = s.criteria;
+    questions[s.id] = q;
+  }
+  return { state: prompt, model: MODEL, questions };
+}
+
+async function askJev(request) {
+  if (STATE.mock) return mockJev(request);
+  const res = await fetch(STATE.workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request) });
+  const text = await res.text();
+  let data; try { data = JSON.parse(text); } catch { throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`); }
+  if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+// ─── Helpers: mock Jev (keyword heuristics, same response shape) ───
+const MOCK_RULES = {
+  pii: /pesel|\b\d{11}\b|\bul\.|born \d{4}|tel\.|\b\d{3} \d{3} \d{3}\b|@\w+\.\w+|kowalsk|nowak|patient|pacjent/i,
+  proprietary: /internal|confidential|poufn|our (q[1-4]|board|team|revenue|client)|naszej firm|layoff|source code|contract|umow/i,
+};
+function mockNoul(id, prompt) {
+  const s = STATE.signals.find((x) => x.id === id);
+  const rule = MOCK_RULES[id];
+  if (rule) return rule.test(prompt) ? 0.93 + Math.random() * 0.05 : 0.02 + Math.random() * 0.06;
+  const hits = (s.instructions.toLowerCase().match(/\b[a-z]{5,}\b/g) || []).filter((w) => prompt.toLowerCase().includes(w)).length;
+  return Math.min(0.95, 0.15 + hits * 0.2);
+}
+function mockScore(id, prompt, levels) {
+  const words = prompt.split(/\s+/).length;
+  const heavy = /compare|analy|propose|roadmap|trade-off|differential|design|prove|evaluate|strategy|guideline|regulat/i.test(prompt);
+  let expected;
+  if (id === 'complexity') expected = heavy ? 1.85 : words > 35 ? 1.0 : 0.15;
+  else if (id === 'knowledge') expected = /act|nist|guideline|diagnos|regulat|compliance|evidence/i.test(prompt) ? 1.8 : words > 35 ? 0.9 : 0.2;
+  else expected = Math.min(levels.length - 1, words / 25);
+  const n = levels.length, probs = {};
+  let sum = 0;
+  for (let i = 0; i < n; i++) { const d = Math.abs(i - expected); probs[i] = Math.exp(-d * d * 3); sum += probs[i]; }
+  let score = 0, max = 0;
+  for (let i = 0; i < n; i++) { probs[i] = +(probs[i] / sum).toFixed(2); score += i * probs[i]; max = Math.max(max, probs[i]); }
+  const legend = {}; levels.forEach((l, i) => { legend[i] = typeof l === 'string' ? l : JSON.stringify(l); });
+  return { type: 'score', score: +score.toFixed(2), confidence: +max.toFixed(2), legend, probabilities: probs };
+}
+async function mockJev(request) {
+  await new Promise((r) => setTimeout(r, 500 + Math.random() * 400));
+  const answers = {};
+  for (const [id, q] of Object.entries(request.questions)) {
+    if (q.type === 'noul') answers[id] = { type: 'noul', noul: +mockNoul(id, request.state).toFixed(2) };
+    else answers[id] = mockScore(id, request.state, q.criteria);
+  }
+  return { model: 'mock-jev', answers, usage: { input_tokens: Math.round(JSON.stringify(request).length / 4), output_tokens: Object.keys(answers).length * 12 } };
+}
+
+// ─── Helpers: misc ───
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nameOf = (s) => (s.name && (s.name[STATE.lang] || s.name.en)) || s.id;
+const fmt = (n) => (typeof n === 'number' ? n.toFixed(2) : '');
+function slug(str) { return str.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'signal'; }
+function policyLabel(p) { return t({ lock_local: 'pLockLocal', lock_frontier: 'pLockFrontier', soft_frontier: 'pSoftFrontier', soft_local: 'pSoftLocal' }[p] || p); }
+function reasonText(r) {
+  const sig = STATE.signals.find((s) => s.id === r.id);
+  const who = sig ? nameOf(sig) : '';
+  if (r.key === 'rDefault' || r.key === 'rNoQuestions') return t(r.key);
+  return `${who}: ${t(r.key)} → ${t(r.to)}`;
+}
+
+// ─── Render ───
+function applyI18n() {
+  document.documentElement.lang = STATE.lang;
+  document.body.dataset.lang = STATE.lang;
+  document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); });
+  document.querySelectorAll('[data-t-placeholder]').forEach((el) => { el.placeholder = t(el.dataset.tPlaceholder); });
+  document.querySelectorAll('[data-t-title]').forEach((el) => { el.title = t(el.dataset.tTitle); });
+  document.querySelectorAll('[data-lang-btn]').forEach((b) => b.classList.toggle('active', b.dataset.langBtn === STATE.lang));
+  renderPresets(); renderSignals(); renderRouter(); renderLog();
+}
+
+function renderPresets() {
+  presetsEl.innerHTML = PRESETS.map((p, i) => `
+    <button class="preset" data-preset="${p.key}" title="${esc(p.text)}">
+      <span class="overline">${i + 1} · ${esc(p[STATE.lang] || p.en)}</span>
+      <span class="desc">${esc(p.desc[STATE.lang] || p.desc.en)}</span>
+    </button>`).join('');
+}
+
+function renderSignals() {
+  const th = STATE.thresholds;
+  signalsEl.innerHTML = STATE.signals.map((s) => {
+    const a = STATE.answers[s.id];
+    const state = s.enabled ? signalState(s, a, th) : 'idle';
+    let body = '', foot = '';
+    if (s.type === 'noul') {
+      const p = a ? a.noul : 0;
+      body = `<div class="bar"><i style="width:${Math.round(p * 100)}%"></i><b style="left:${th.noulNo * 100}%"></b><b style="left:${th.noulYes * 100}%"></b></div>`;
+      foot = `<span>p(yes) = <span class="value">${a ? fmt(p) : '–'}</span></span>`;
+    } else {
+      const levels = s.criteria || [];
+      const probs = a ? a.probabilities : {};
+      body = `<div class="gauge"><div class="gauge-track">${levels.map((_, i) => `<i><s style="transform:scaleX(${probs[i] || 0})"></s></i>`).join('')}</div>
+        <div class="gauge-legend">${levels.map((l, i) => `<span title="${esc(l)}">${i} · ${esc(String(l).split(':')[0])}</span>`).join('')}</div></div>`;
+      foot = `<span>score = <span class="value">${a ? fmt(a.score) : '–'}</span></span><span>conf = <span class="value">${a ? fmt(a.confidence) : '–'}</span></span>`;
+    }
+    const val = a ? (s.type === 'noul' ? a.noul : a.score) : '';
+    const conf = a && a.confidence !== undefined ? a.confidence : '';
+    return `<article class="signal" data-id="${esc(s.id)}" data-type="${s.type}" data-policy="${s.policy}" data-state="${state}" data-value="${val}" data-confidence="${conf}" data-enabled="${s.enabled}">
+      <div class="signal-head">
+        <label class="toggle" title="on/off"><input type="checkbox" data-toggle="${esc(s.id)}" ${s.enabled ? 'checked' : ''}></label>
+        <span class="signal-name">${esc(nameOf(s))}</span>
+        <span class="state-chip">${t('st' + state[0].toUpperCase() + state.slice(1))}</span>
+        <span class="signal-actions">
+          <button class="btn icon" data-edit="${esc(s.id)}" title="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+          <button class="btn icon" data-del="${esc(s.id)}" title="delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+        </span>
+      </div>
+      <div class="signal-q">${esc(s.instructions)}</div>
+      ${body}
+      <div class="signal-foot">${foot}<span class="policy chip sand" style="font-size:10px">${esc(policyLabel(s.policy))}</span></div>
+    </article>`;
+  }).join('');
+}
+
+function renderRouter() {
+  const d = STATE.decision, phase = STATE.phase;
+  const n = STATE.signals.filter((s) => s.enabled).length;
+  routerEl.dataset.target = d ? d.target : 'none';
+  $('#nJevSub').textContent = `1 req · ${n} ${t('questions')}`;
+  const tokens = STATE.lastResponse && STATE.lastResponse.usage ? STATE.lastResponse.usage.input_tokens : 0;
+  $('#nPromptSub').textContent = `${tokens} ${t('tokens')}`;
+  $('#nPolicySub').textContent = d ? `${d.locks.length} ${t('rLock')} · ${d.votes.length} ${t('rVote')}` : '';
+  const active = phase === 'asking' || phase === 'decided';
+  $('#nPrompt').classList.toggle('is-active', active);
+  $('#a1').classList.toggle('is-active', active);
+  $('#nJev').classList.toggle('is-active', active);
+  $('#nPolicy').classList.toggle('is-active', phase === 'decided');
+  $('#a2').classList.toggle('is-active', phase === 'decided' && d.target === 'local');
+  $('#a3').classList.toggle('is-active', phase === 'decided' && d.target === 'frontier');
+  $('#nLocal').classList.toggle('is-active', phase === 'decided' && d.target === 'local');
+  $('#nFrontier').classList.toggle('is-active', phase === 'decided' && d.target === 'frontier');
+  $('#nLocal').classList.toggle('is-off', phase === 'decided' && d.target !== 'local');
+  $('#nFrontier').classList.toggle('is-off', phase === 'decided' && d.target !== 'frontier');
+  renderResponse();
+}
+
+function renderResponse() {
+  const d = STATE.decision;
+  responseEl.className = 'response' + (d ? ' ' + d.target : '');
+  if (!d) { responseEl.innerHTML = ''; return; }
+  const local = d.target === 'local';
+  const tags = local ? ['tagPrivate', 'tagCheap', 'tagFast'] : ['tagExternal', 'tagPaid', 'tagSlow'];
+  responseEl.innerHTML = `<h3>${t(local ? 'respLocal' : 'respFrontier')}</h3>
+    <div class="model">${local ? LOCAL_MODEL : FRONTIER_MODEL}</div>
+    <div class="tags">${tags.map((k) => `<span>${t(k)}</span>`).join('')}</div>
+    <ul>${d.reasons.map((r) => `<li>${esc(reasonText(r))}</li>`).join('')}</ul>
+    <div class="sim">${t('simNote')}</div>`;
+}
+
+function renderLog() {
+  logEl.innerHTML = STATE.log.map((row) => `<tr data-target="${row.target}">
+    <td class="mono">${row.time}</td>
+    <td class="prompt-cell" title="${esc(row.prompt)}">${esc(row.prompt)}</td>
+    <td><span class="chip ${row.target === 'local' ? 'green' : ''}">${t(row.target)}</span></td>
+    <td>${esc(row.fired.join(', ') || '–')}</td>
+    <td class="mono">${row.tokens}</td>
+  </tr>`).join('');
+}
+
+function renderRaw() {
+  rawReqEl.textContent = STATE.lastRequest ? JSON.stringify(STATE.lastRequest, null, 2) : '{}';
+  rawResEl.textContent = STATE.lastResponse ? JSON.stringify(STATE.lastResponse, null, 2) : '{}';
+}
+
+function setPhase(phase, message) {
+  STATE.phase = phase;
+  document.body.dataset.phase = phase;
+  btnRoute.disabled = phase === 'asking';
+  statusEl.textContent = message || '';
+}
+
+function renderMode() {
+  STATE.mock = new URLSearchParams(location.search).get('mock') === '1' || !STATE.workerUrl;
+  document.body.dataset.mock = String(STATE.mock);
+  mockBadge.classList.toggle('hidden', !STATE.mock);
+}
+
+function renderSettings() {
+  $('#workerUrl').value = STATE.workerUrl;
+  for (const [id, key] of [['thNoulYes', 'noulYes'], ['thNoulNo', 'noulNo'], ['thScoreHigh', 'scoreHigh'], ['thMinConf', 'minConfidence']]) {
+    $('#' + id).value = STATE.thresholds[key]; $('#' + id + 'Val').textContent = fmt(STATE.thresholds[key]);
+  }
+}
+
+// ─── Actions ───
+async function route() {
+  const prompt = promptEl.value.trim();
+  if (!prompt) { setPhase('idle', t('emptyPrompt')); promptEl.focus(); return; }
+  STATE.answers = {}; STATE.decision = null;
+  STATE.lastRequest = buildRequest(prompt, STATE.signals); STATE.lastResponse = null;
+  setPhase('asking', t('asking'));
+  renderSignals(); renderRouter(); renderRaw();
+  try {
+    const res = await askJev(STATE.lastRequest);
+    STATE.lastResponse = res;
+    STATE.answers = res.answers || {};
+    STATE.decision = decide(STATE.signals, STATE.answers, STATE.thresholds);
+    const fired = STATE.signals.filter((s) => s.enabled && signalState(s, STATE.answers[s.id], STATE.thresholds) === 'fire').map(nameOf);
+    STATE.log.unshift({ time: new Date().toLocaleTimeString(), prompt, target: STATE.decision.target, fired, tokens: res.usage ? res.usage.input_tokens : 0 });
+    setPhase('decided', t(STATE.decision.target === 'local' ? 'decidedLocal' : 'decidedFrontier'));
+  } catch (err) {
+    setPhase('error', t('errorPrefix') + err.message);
+  }
+  renderSignals(); renderRouter(); renderLog(); renderRaw();
+}
+
+function openSignalEditor(signal) {
+  $('#signalFormTitle').textContent = t(signal ? 'editSignal' : 'addSignal');
+  $('#sigId').value = signal ? signal.id : '';
+  $('#sigNamePl').value = signal ? signal.name.pl : '';
+  $('#sigNameEn').value = signal ? signal.name.en : '';
+  $('#sigType').value = signal ? signal.type : 'noul';
+  $('#sigPolicy').value = signal ? signal.policy : 'soft_frontier';
+  $('#sigInstr').value = signal ? signal.instructions : '';
+  $('#sigTrue').value = signal && signal.type === 'noul' && signal.criteria ? signal.criteria.true || '' : '';
+  $('#sigFalse').value = signal && signal.type === 'noul' && signal.criteria ? signal.criteria.false || '' : '';
+  $('#sigLevels').value = signal && signal.type === 'score' ? signal.criteria.join('\n') : '';
+  syncCriteriaFields();
+  dlgSignal.showModal();
+}
+function syncCriteriaFields() {
+  const isNoul = $('#sigType').value === 'noul';
+  $('#noulCriteria').classList.toggle('hidden', !isNoul);
+  $('#scoreCriteria').classList.toggle('hidden', isNoul);
+  $('#sigLevels').required = !isNoul;
+}
+function saveSignalFromForm() {
+  const existingId = $('#sigId').value;
+  const type = $('#sigType').value;
+  const signal = {
+    id: existingId || uniqueId(slug($('#sigNameEn').value)),
+    enabled: true, type, policy: $('#sigPolicy').value,
+    name: { pl: $('#sigNamePl').value.trim(), en: $('#sigNameEn').value.trim() },
+    instructions: $('#sigInstr').value.trim(),
+    criteria: type === 'noul'
+      ? { true: $('#sigTrue').value.trim(), false: $('#sigFalse').value.trim() }
+      : $('#sigLevels').value.split('\n').map((l) => l.trim()).filter(Boolean),
+  };
+  if (type === 'score' && signal.criteria.length < 2) { $('#sigLevels').focus(); return false; }
+  const idx = STATE.signals.findIndex((s) => s.id === existingId);
+  if (idx >= 0) { signal.enabled = STATE.signals[idx].enabled; STATE.signals[idx] = signal; } else STATE.signals.push(signal);
+  persistSignals(); renderSignals(); renderRouter();
+  return true;
+}
+function uniqueId(base) { let id = base, i = 2; while (STATE.signals.some((s) => s.id === id)) id = `${base}_${i++}`; return id; }
+
+function exportSignals() {
+  const blob = new Blob([JSON.stringify(STATE.signals, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'jev-router-signals.json'; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importSignals(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const list = JSON.parse(reader.result);
+      if (!Array.isArray(list) || !list.every((s) => s.id && s.type && s.instructions)) throw new Error('shape');
+      STATE.signals = list.map((s) => ({ enabled: true, policy: 'soft_frontier', name: { pl: s.id, en: s.id }, ...s }));
+      persistSignals(); renderSignals(); renderRouter();
+    } catch { setPhase(STATE.phase, t('importBad')); }
+  };
+  reader.readAsText(file);
+}
+
+// ─── Listeners ───
+btnRoute.addEventListener('click', route);
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); route(); }
+  if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey && !['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog[open]')) {
+    const p = PRESETS[+e.key - 1]; if (p) { promptEl.value = p.text; route(); }
+  }
+});
+presetsEl.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-preset]'); if (!b) return;
+  promptEl.value = PRESETS.find((p) => p.key === b.dataset.preset).text; route();
+});
+document.querySelectorAll('[data-lang-btn]').forEach((b) => b.addEventListener('click', () => { STATE.lang = b.dataset.langBtn; localStorage.setItem(LS.lang, STATE.lang); applyI18n(); }));
+
+signalsEl.addEventListener('click', (e) => {
+  const edit = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+  if (edit) openSignalEditor(STATE.signals.find((s) => s.id === edit.dataset.edit));
+  if (del && confirm(t('confirmDelete'))) { STATE.signals = STATE.signals.filter((s) => s.id !== del.dataset.del); persistSignals(); renderSignals(); renderRouter(); }
+});
+signalsEl.addEventListener('change', (e) => {
+  const tog = e.target.closest('[data-toggle]'); if (!tog) return;
+  const s = STATE.signals.find((x) => x.id === tog.dataset.toggle); s.enabled = tog.checked; persistSignals(); renderSignals(); renderRouter();
+});
+$('#btnAddSignal').addEventListener('click', () => openSignalEditor(null));
+$('#sigType').addEventListener('change', syncCriteriaFields);
+$('#btnSignalCancel').addEventListener('click', () => dlgSignal.close());
+signalForm.addEventListener('submit', (e) => { e.preventDefault(); if (saveSignalFromForm()) dlgSignal.close(); });
+$('#btnExport').addEventListener('click', exportSignals);
+$('#btnImport').addEventListener('click', () => $('#importFile').click());
+$('#importFile').addEventListener('change', (e) => { if (e.target.files[0]) importSignals(e.target.files[0]); e.target.value = ''; });
+
+$('#btnSettings').addEventListener('click', () => { renderSettings(); dlgSettings.showModal(); });
+$('#workerUrl').addEventListener('change', (e) => { STATE.workerUrl = e.target.value.trim(); localStorage.setItem(LS.worker, STATE.workerUrl); renderMode(); });
+for (const [id, key] of [['thNoulYes', 'noulYes'], ['thNoulNo', 'noulNo'], ['thScoreHigh', 'scoreHigh'], ['thMinConf', 'minConfidence']]) {
+  $('#' + id).addEventListener('input', (e) => {
+    STATE.thresholds[key] = +e.target.value; $('#' + id + 'Val').textContent = fmt(+e.target.value); persistThresholds();
+    if (STATE.phase === 'decided') STATE.decision = decide(STATE.signals, STATE.answers, STATE.thresholds);
+    renderSignals(); renderRouter();
+  });
+}
+$('#btnResetSignals').addEventListener('click', () => { STATE.signals = structuredClone(DEFAULT_SIGNALS); STATE.thresholds = { ...DEFAULT_THRESHOLDS }; persistSignals(); persistThresholds(); renderSettings(); renderSignals(); renderRouter(); });
+$('#btnClearLog').addEventListener('click', () => { STATE.log = []; renderLog(); });
+
+// ─── Init ───
+STATE.lang = localStorage.getItem(LS.lang) || 'pl';
+STATE.workerUrl = localStorage.getItem(LS.worker) || '';
+STATE.signals = loadJSON(LS.signals, null) || structuredClone(DEFAULT_SIGNALS);
+STATE.thresholds = { ...DEFAULT_THRESHOLDS, ...loadJSON(LS.thresholds, {}) };
+renderMode(); applyI18n(); renderRaw(); setPhase('idle', '');
+
+window.App = { STATE, T, t, decide, signalState, buildRequest, mockJev, route, DEFAULT_SIGNALS, PRESETS };
+</script>
+</body>
+</html>
