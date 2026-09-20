@@ -362,3 +362,83 @@ test('model destinations show example families, not pinned versions', () => {
   assert.equal(App.T.en.frontierExamples, 'e.g. GPT, Claude, Gemini');
   assert.doesNotMatch(markup, /gemma4:12b|gpt-5\.6-luna/);
 });
+
+// ─── Attachments ───
+
+test('buildRequest without attachments keeps state equal to the prompt', () => {
+  const request = App.buildRequest('Plain prompt.', [noulSignal('pii')], []);
+  assert.equal(request.state, 'Plain prompt.');
+});
+
+test('buildRequest appends each attachment as a named block after the prompt', () => {
+  const attachments = [
+    App.makeAttachment({ name: 'notes.md', text: 'alpha beta' }),
+    App.makeAttachment({ name: 'data.csv', text: 'id,name\n1,Ala' }),
+  ];
+  const request = App.buildRequest('Summarise.', [noulSignal('pii')], attachments);
+  assert.ok(request.state.startsWith('<user_prompt>\nSummarise.\n</user_prompt>'));
+  assert.match(request.state, /<attachment name="notes\.md" type="md" truncated="false">\nalpha beta\n<\/attachment>/);
+  assert.match(request.state, /<attachment name="data\.csv" type="csv" truncated="false">\nid,name\n1,Ala\n<\/attachment>/);
+  assert.ok(request.state.indexOf('notes.md') < request.state.indexOf('data.csv'));
+});
+
+test('makeAttachment clips text to one page and flags truncation', () => {
+  const long = 'x'.repeat(App.ATTACHMENT_CHARS + 500);
+  const a = App.makeAttachment({ name: 'long.txt', text: long });
+  assert.equal(a.text.length, App.ATTACHMENT_CHARS);
+  assert.equal(a.truncated, true);
+  assert.equal(a.chars, App.ATTACHMENT_CHARS);
+  const short = App.makeAttachment({ name: 'short.txt', text: 'hello' });
+  assert.equal(short.truncated, false);
+  assert.equal(short.chars, 5);
+});
+
+test('ATTACHMENT_CHARS is one page of text', () => {
+  assert.equal(App.ATTACHMENT_CHARS, 3000);
+});
+
+test('truncated attachment block carries truncated="true"', () => {
+  const a = App.makeAttachment({ name: 'big.pdf', text: 'y'.repeat(App.ATTACHMENT_CHARS + 1) });
+  const request = App.buildRequest('Read it.', [noulSignal('pii')], [a]);
+  assert.match(request.state, /<attachment name="big\.pdf" type="pdf" truncated="true">/);
+});
+
+test('addAttachment accepts at most MAX_ATTACHMENTS files', () => {
+  App.STATE.attachments = [];
+  for (let i = 0; i < App.MAX_ATTACHMENTS; i++) assert.equal(App.addAttachment({ name: `f${i}.txt`, text: 'ok' }), true);
+  assert.equal(App.addAttachment({ name: 'extra.txt', text: 'no' }), false);
+  assert.equal(App.STATE.attachments.length, App.MAX_ATTACHMENTS);
+  assert.equal(App.MAX_ATTACHMENTS, 3);
+  App.STATE.attachments = [];
+});
+
+test('removeAttachment drops the attachment by index', () => {
+  App.STATE.attachments = [];
+  App.addAttachment({ name: 'a.txt', text: '1' });
+  App.addAttachment({ name: 'b.txt', text: '2' });
+  App.removeAttachment(0);
+  assert.deepEqual(App.STATE.attachments.map((a) => a.name), ['b.txt']);
+  App.STATE.attachments = [];
+});
+
+test('attachmentKind maps extensions and rejects unsupported files', () => {
+  assert.equal(App.attachmentKind('Report.PDF'), 'pdf');
+  assert.equal(App.attachmentKind('readme.md'), 'md');
+  assert.equal(App.attachmentKind('x.csv'), 'csv');
+  assert.equal(App.attachmentKind('x.txt'), 'txt');
+  assert.equal(App.attachmentKind('x.docx'), null);
+});
+
+test('DOM contract has the attach file input and list inside nPrompt', () => {
+  const input = nodeById(domTree, 'attachInput');
+  const list = nodeById(domTree, 'attachments');
+  const nPrompt = nodeById(domTree, 'nPrompt');
+  assert.equal(input.length, 1);
+  assert.equal(input[0].tagName, 'input');
+  assert.equal(input[0].attrs.type, 'file');
+  assert.equal(input[0].attrs.accept, '.txt,.md,.csv,.pdf');
+  assert.equal('multiple' in input[0].attrs, true);
+  assert.equal(list.length, 1);
+  assert.equal(isNested(input[0], nPrompt[0]), true);
+  assert.equal(isNested(list[0], nPrompt[0]), true);
+});

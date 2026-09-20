@@ -277,6 +277,49 @@ try {
     check('prompt edit invalidates async response (mock only)', true, 'skipped in --real mode');
   }
 
+  // Attachments: real files through the file input (pdf.js runs in the page), clipping, cap, removal.
+  const fixtureDir = process.env.JEV_FIXTURES || '';
+  if (fixtureDir) {
+    const fx = (name) => `${fixtureDir}/${name}`;
+    await page.fill('#prompt', '');
+    await page.evaluate(() => { App.STATE.attachments = []; App.renderAttachments(); });
+    await page.setInputFiles('#attachInput', [fx('note.txt'), fx('customers.csv'), fx('long.pdf')]);
+    await page.waitForFunction(() => document.querySelectorAll('#attachments .attachment').length === 3, null, { timeout: 20000 });
+    const attached = await page.evaluate(() => ({
+      row: { ...document.getElementById('attachRow').dataset },
+      items: [...document.querySelectorAll('#attachments .attachment')].map((el) => ({ name: el.dataset.attachment, kind: el.dataset.kind, truncated: el.dataset.truncated })),
+      pdfChars: App.STATE.attachments.find((a) => a.kind === 'pdf')?.chars,
+      pdfText: App.STATE.attachments.find((a) => a.kind === 'pdf')?.text.slice(0, 40),
+      btnDisabled: document.getElementById('btnAttach').disabled,
+    }));
+    check('three attachments read (txt, csv, pdf via pdf.js)', attached.row.attachments === '3' && attached.items.map((i) => i.kind).join(',') === 'txt,csv,pdf', attached);
+    check('pdf clipped to one page of text', attached.pdfChars === 3000 && attached.items[2].truncated === 'true' && /Paragraph 1\./.test(attached.pdfText), attached);
+    check('attach button disabled at the cap', attached.btnDisabled === true);
+    await page.setInputFiles('#attachInput', [fx('note.txt')]);
+    await page.waitForTimeout(300);
+    check('fourth file rejected with a status message', (await page.textContent('#status')).length > 0 && (await page.$$eval('#attachments .attachment', (els) => els.length)) === 3);
+    await page.click('#attachments [data-remove="0"]');
+    await page.setInputFiles('#attachInput', [fx('bad.docx')]);
+    await page.waitForTimeout(300);
+    check('unsupported type rejected, slot stays free', (await page.$$eval('#attachments .attachment', (els) => els.length)) === 2 && /docx/.test(await page.textContent('#status')));
+    await page.click('#btnRoute');
+    const attachPhase = await waitForDecision();
+    const attachRaw = await page.evaluate(() => ({ state: App.STATE.lastRequest.state, target: App.STATE.decision?.target, prompt: document.getElementById('prompt').value, logRow: document.querySelector('#log tr .prompt-cell')?.textContent }));
+    check('empty prompt with attachments routes the attachments, no random draw', attachPhase === 'decided' && attachRaw.prompt === '' && attachRaw.state.startsWith('<user_prompt>\n\n</user_prompt>') && /<attachment name="customers\.csv" type="csv" truncated="false">/.test(attachRaw.state) && /<attachment name="long\.pdf" type="pdf" truncated="true">/.test(attachRaw.state), { target: attachRaw.target, head: attachRaw.state.slice(0, 120) });
+    check('history row shows attachment count', /📎2/.test(attachRaw.logRow || ''), attachRaw.logRow);
+    if (MOCK) check('PII csv + proprietary pdf route local in mock', attachRaw.target === 'local', attachRaw.target);
+    await page.fill('#prompt', 'Summarise the attached file.');
+    await page.click('#btnRoute');
+    await waitForDecision();
+    const withPrompt = await page.evaluate(() => App.STATE.lastRequest.state.startsWith('<user_prompt>\nSummarise the attached file.\n</user_prompt>'));
+    check('prompt and attachments travel in one state', withPrompt);
+    await page.click('#attachments [data-remove="0"]'); await page.click('#attachments [data-remove="0"]');
+    const cleared = await page.evaluate(() => ({ n: App.STATE.attachments.length, phase: document.body.dataset.phase, row: document.getElementById('attachRow').dataset.attachments }));
+    check('removing attachments invalidates the decision', cleared.n === 0 && cleared.phase === 'idle' && cleared.row === '0', cleared);
+  } else {
+    check('attachments (set JEV_FIXTURES=<dir> with note.txt, customers.csv, long.pdf, bad.docx)', true, 'skipped');
+  }
+
   const importOk = await page.evaluate(() => [
     App.validSignal({ id: 'x', type: 'score', instructions: 'q' }) === false,
     App.validSignal({ id: 'x', type: 'score', instructions: 'q', criteria: 'a' }) === false,

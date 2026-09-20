@@ -16,7 +16,6 @@ simulated.
 - `probe.mjs` – Playwright DOM-contract and interaction probe. It covers the six presets,
   signal CRUD, threshold re-decision, PL/EN, responsive contracts, empty prompts, and stale
   async responses in mock mode.
-- `jev-demo.sh` – curl example of a raw Jev request.
 
 Start a local server and run the mock probe:
 
@@ -41,5 +40,14 @@ At 1280px and wider the sheet docks on the right when opened, leaving the prompt
 controls usable. On smaller screens it opens as a modal sheet. The white prompt editor stays
 tall; Policy and Jev Router fit their contents. Green local and blue frontier cards list
 model-family examples, not pinned model versions.
+
+Attachments: **Dołącz plik / Attach file** (or drag and drop onto the prompt stage) adds up to
+three `txt`, `md`, `csv` or `pdf` files. Each is read as text in the browser (PDF via pdf.js from
+cdnjs) and clipped to one page, 3 000 characters, with a red "clipped" badge. Prompt and
+attachments travel to Jev in one `state` string: a `<user_prompt>` block followed by one
+`<attachment name type truncated>` block per file, so every signal scores both at once. An empty
+prompt with attachments routes the attachments alone instead of drawing a random example.
+Attachments are kept in memory only. The probe covers them when `JEV_FIXTURES=<dir>` points at
+`note.txt`, `customers.csv`, `long.pdf` and `bad.docx`.
 
 Shortcuts: Ctrl+Enter routes, keys 1 to 6 run the presets, and Escape closes the active panel.

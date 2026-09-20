@@ -169,6 +169,18 @@ main { flex:1; padding:var(--canvas-pad); }
 .prompt-stage textarea { flex:1; width:100%; min-height:270px; padding:16px; margin:24px 0; border:0; border-radius:var(--r-sm); background:var(--paper); color:var(--ink); resize:none; font:inherit; font-size:var(--body); line-height:1.75; }
 .prompt-stage textarea::placeholder { color:var(--ink-2); opacity:1; }
 .prompt-stage textarea:focus-visible { outline:2px solid var(--yellow); outline-offset:4px; box-shadow:none; }
+.attach-row { display:flex; flex-direction:column; gap:8px; margin:-14px 0 16px; }
+.attachments { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+.attachments:empty { display:none; }
+.attachment { display:inline-flex; align-items:center; gap:8px; max-width:100%; padding:5px 8px 5px 10px; border:1px solid var(--dark-line); border-radius:var(--r-pill); background:var(--paper); color:var(--ink); font-size:var(--stage-caption); line-height:1.3; }
+.attachment .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
+.attachment .meta { font-family:var(--font-mono); color:var(--ink-2); white-space:nowrap; }
+.attachment[data-truncated="true"] .meta { color:var(--red); }
+.attachment .remove { border:0; background:transparent; color:inherit; padding:0 2px; cursor:pointer; font-size:16px; line-height:1; }
+.attach-btn { display:inline-flex; align-items:center; gap:6px; margin:0 !important; }
+.attach-btn svg { width:15px; height:15px; }
+.attach-hint { opacity:.7; text-decoration:none; }
+.prompt-stage.is-dragover textarea { outline:2px dashed var(--yellow); outline-offset:4px; }
 .route-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .route-row .primary { box-shadow:none; margin-right:auto; }
 .shortcut { white-space:nowrap; }
@@ -316,6 +328,11 @@ body[data-phase="decided"] .response { display:block; }
     <section class="flow-stage prompt-stage" id="nPrompt" data-stage="prompt" aria-labelledby="promptTitle">
       <div class="stage-heading"><h2 id="promptTitle"><label for="prompt" data-t="nPrompt">Prompt</label></h2><span class="mono stage-meta" id="nPromptSub">0 tok</span></div>
       <textarea id="prompt" data-t-placeholder="promptPlaceholder" placeholder="Wpisz prompt, który trafiłby do asystenta AI..."></textarea>
+      <div class="attach-row" id="attachRow" data-attachments="0" data-attachment-chars="0">
+        <ul class="attachments" id="attachments" aria-live="polite"></ul>
+        <button class="text-action attach-btn" type="button" id="btnAttach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8.5-8.5a3.5 3.5 0 0 1 5 5L10.5 18a2 2 0 0 1-3-3l8-8"/></svg><span data-t="attach">Dołącz plik</span> <span class="attach-hint" data-t="attachHint">(txt, md, csv, pdf · 1 strona)</span></button>
+        <input type="file" id="attachInput" class="hidden" accept=".txt,.md,.csv,.pdf" multiple>
+      </div>
       <div class="route-row"><button class="btn primary" id="btnRoute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-t="route">Routuj</span></button><span class="shortcut"><kbd>Ctrl</kbd> <kbd>Enter</kbd></span></div>
       <span class="status-line" id="status" role="status" aria-live="polite"></span>
       <div class="progress" aria-hidden="true"><i></i></div>
@@ -431,6 +448,11 @@ body[data-phase="decided"] .response { display:block; }
 
 <script>
 // ─── Constants ───
+const ATTACHMENT_CHARS = 3000; // one page of text per attachment
+const MAX_ATTACHMENTS = 3;
+const ATTACHMENT_KINDS = { txt: 'txt', md: 'md', csv: 'csv', pdf: 'pdf' };
+const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 const LS = { lang: 'jevRouter.lang', worker: 'jevRouter.workerUrl', signals: 'jevRouter.signals', thresholds: 'jevRouter.thresholds' };
 const MODEL = 'jev-latest';
 const DEFAULT_THRESHOLDS = { noulYes: 0.65, noulNo: 0.35, scoreHigh: 1.5, minConfidence: 0.5 };
@@ -500,6 +522,7 @@ const T = {
     namePl: 'Nazwa (PL)', nameEn: 'Nazwa (EN)', type: 'Typ', policy: 'Polityka', pLockLocal: 'Blokada: lokalnie', pLockFrontier: 'Blokada: frontier', pSoftFrontier: 'Głos: frontier', pSoftLocal: 'Głos: lokalnie',
     instructions: 'Pytanie (EN, instructions)', instrHint: 'Jev działa najlepiej po angielsku. Odnoś się do stanu jako "the prompt".', critTrue: 'Co znaczy TAK', critFalse: 'Co znaczy NIE', critLevels: 'Poziomy (jeden na linię, od najniższego)', cancel: 'Anuluj', save: 'Zapisz',
     stFire: 'aktywny', stClear: 'czysty', stUncertain: 'niepewny', stIdle: 'czeka', local: 'lokalnie', frontier: 'frontier',
+    attach: 'Dołącz plik', attachHint: '(txt, md, csv, pdf · 1 strona)', attachRemove: 'Usuń załącznik', attachTruncated: 'przycięto do 1 strony', attachUnsupported: 'Nieobsługiwany typ pliku: {name}', attachTooMany: 'Maksymalnie {n} załączniki.', attachReadError: 'Nie udało się odczytać: {name}', attachEmpty: 'Plik nie zawiera tekstu: {name}', attachReading: 'Czytam załącznik...',
     emptyPrompt: 'Wpisz prompt.', asking: 'Jev ocenia sygnały...', decidedLocal: 'Decyzja: mały model lokalny.', decidedFrontier: 'Decyzja: model frontier.', errorPrefix: 'Błąd: ',
     questions: 'pytań', tokens: 'tok', respLocal: 'Odpowiedź z lokalnego modelu', respFrontier: 'Odpowiedź z modelu frontier', simNote: 'Symulacja: właściwe wywołanie modelu nie jest wykonywane.',
     tagPrivate: 'dane zostają w firmie', tagExternal: 'dane opuszczają firmę', tagCheap: 'koszt ~0', tagPaid: 'koszt płatny', tagFast: 'niska latencja', tagSlow: 'wyższa latencja',
@@ -528,6 +551,7 @@ const T = {
     namePl: 'Name (PL)', nameEn: 'Name (EN)', type: 'Type', policy: 'Policy', pLockLocal: 'Lock: local', pLockFrontier: 'Lock: frontier', pSoftFrontier: 'Vote: frontier', pSoftLocal: 'Vote: local',
     instructions: 'Question (EN, instructions)', instrHint: 'Jev is strongest in English. Refer to the state as "the prompt".', critTrue: 'What YES means', critFalse: 'What NO means', critLevels: 'Levels (one per line, lowest first)', cancel: 'Cancel', save: 'Save',
     stFire: 'fired', stClear: 'clear', stUncertain: 'uncertain', stIdle: 'idle', local: 'local', frontier: 'frontier',
+    attach: 'Attach file', attachHint: '(txt, md, csv, pdf · 1 page)', attachRemove: 'Remove attachment', attachTruncated: 'clipped to 1 page', attachUnsupported: 'Unsupported file type: {name}', attachTooMany: 'At most {n} attachments.', attachReadError: 'Could not read: {name}', attachEmpty: 'No text found in: {name}', attachReading: 'Reading attachment...',
     emptyPrompt: 'Type a prompt first.', asking: 'Jev is evaluating the signals...', decidedLocal: 'Decision: local small model.', decidedFrontier: 'Decision: frontier model.', errorPrefix: 'Error: ',
     questions: 'questions', tokens: 'tok', respLocal: 'Response from the local model', respFrontier: 'Response from the frontier model', simNote: 'Simulation: the actual model call is not made.',
     tagPrivate: 'data stays in-house', tagExternal: 'data leaves the company', tagCheap: 'cost ~0', tagPaid: 'paid tokens', tagFast: 'low latency', tagSlow: 'higher latency',
@@ -541,7 +565,7 @@ const t = (key) => (T[STATE.lang] && T[STATE.lang][key]) || T.en[key] || key;
 const STATE = {
   lang: 'pl', workerUrl: '', mock: true,
   signals: [], thresholds: { ...DEFAULT_THRESHOLDS },
-  phase: 'idle', requestId: 0, answers: {}, decision: null, lastRequest: null, lastResponse: null, log: [],
+  phase: 'idle', requestId: 0, answers: {}, decision: null, lastRequest: null, lastResponse: null, log: [], attachments: [],
 };
 
 // ─── DOM refs ───
@@ -549,6 +573,7 @@ const $ = (sel) => document.querySelector(sel);
 const promptEl = $('#prompt'), btnRoute = $('#btnRoute'), statusEl = $('#status'), presetsEl = $('#presets');
 const signalsEl = $('#signals'), routerEl = $('#router'), responseEl = $('#response'), logEl = $('#log');
 const rawReqEl = $('#rawRequest'), rawResEl = $('#rawResponse');
+const attachInputEl = $('#attachInput'), attachmentsEl = $('#attachments'), promptStageEl = $('#nPrompt');
 const dlgSettings = $('#dlgSettings'), dlgSignal = $('#dlgSignal'), signalForm = $('#signalForm');
 const policySignalsEl = $('#policySignals'), scoreSignalsEl = $('#scoreSignals'), sideSheetEl = $('#sideSheet');
 
@@ -612,7 +637,28 @@ function decide(signals, answers, th) {
 }
 
 // ─── Helpers: Jev request ───
-function buildRequest(prompt, signals) {
+function attachmentKind(name) {
+  const ext = String(name || '').toLowerCase().split('.').pop();
+  return ATTACHMENT_KINDS[ext] || null;
+}
+function makeAttachment({ name, text, kind }) {
+  const full = String(text || '').replace(/\r\n?/g, '\n').trim();
+  const truncated = full.length > ATTACHMENT_CHARS;
+  const clipped = truncated ? full.slice(0, ATTACHMENT_CHARS) : full;
+  return { name, kind: kind || attachmentKind(name) || 'txt', text: clipped, chars: clipped.length, truncated, size: full.length };
+}
+function addAttachment(spec) {
+  if (STATE.attachments.length >= MAX_ATTACHMENTS) return false;
+  STATE.attachments.push(spec && spec.chars !== undefined && spec.truncated !== undefined ? spec : makeAttachment(spec));
+  return true;
+}
+function removeAttachment(index) { STATE.attachments.splice(index, 1); }
+function composeState(prompt, attachments) {
+  if (!attachments || !attachments.length) return prompt;
+  const blocks = attachments.map((a) => `<attachment name="${a.name.replace(/"/g, "'")}" type="${a.kind}" truncated="${a.truncated}">\n${a.text}\n</attachment>`);
+  return [`<user_prompt>\n${prompt}\n</user_prompt>`, ...blocks].join('\n\n');
+}
+function buildRequest(prompt, signals, attachments) {
   const questions = {};
   for (const s of signals) {
     if (!s.enabled) continue;
@@ -621,7 +667,7 @@ function buildRequest(prompt, signals) {
     else q.criteria = s.criteria;
     questions[s.id] = q;
   }
-  return { state: prompt, model: MODEL, questions };
+  return { state: composeState(prompt, attachments), model: MODEL, questions };
 }
 
 async function askJev(request) {
@@ -631,6 +677,47 @@ async function askJev(request) {
   let data; try { data = JSON.parse(text); } catch { throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`); }
   if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
   return data;
+}
+
+// ─── Helpers: attachment reading ───
+let pdfjsPromise = null;
+async function loadPdfjs() {
+  if (!pdfjsPromise) pdfjsPromise = import(PDFJS_URL).then((mod) => { mod.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL; return mod; });
+  return pdfjsPromise;
+}
+async function extractPdfText(file) {
+  const pdfjs = await loadPdfjs();
+  const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pages = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    let line = '', out = '';
+    for (const item of content.items) { line += item.str; if (item.hasEOL) { out += line + '\n'; line = ''; } else if (item.str && !item.str.endsWith(' ')) line += ' '; }
+    pages.push((out + line).trim());
+    if (pages.join('\n').length > ATTACHMENT_CHARS) break; // one page of text is enough
+  }
+  return pages.join('\n\n');
+}
+async function readAttachmentFile(file) {
+  const kind = attachmentKind(file.name);
+  if (!kind) throw Object.assign(new Error('unsupported'), { code: 'attachUnsupported' });
+  const text = kind === 'pdf' ? await extractPdfText(file) : await file.text();
+  if (!text.trim()) throw Object.assign(new Error('empty'), { code: 'attachEmpty' });
+  return makeAttachment({ name: file.name, text, kind });
+}
+async function attachFiles(files) {
+  const list = Array.from(files || []);
+  if (!list.length) return;
+  setPhase('idle', t('attachReading'));
+  let message = '';
+  for (const file of list) {
+    if (STATE.attachments.length >= MAX_ATTACHMENTS) { message = t('attachTooMany').replace('{n}', MAX_ATTACHMENTS); break; }
+    try { addAttachment(await readAttachmentFile(file)); }
+    catch (err) { message = t(err.code || 'attachReadError').replace('{name}', file.name); }
+  }
+  invalidateDecision();
+  setPhase('idle', message);
 }
 
 // ─── Helpers: mock Jev (keyword heuristics, same response shape) ───
@@ -741,7 +828,7 @@ function applyI18n() {
   document.querySelectorAll('[data-t-placeholder]').forEach((el) => { el.placeholder = t(el.dataset.tPlaceholder); });
   document.querySelectorAll('[data-t-title]').forEach((el) => { el.title = t(el.dataset.tTitle); });
   document.querySelectorAll('[data-lang-btn]').forEach((b) => b.classList.toggle('active', b.dataset.langBtn === STATE.lang));
-  renderPresets(); renderSignals(); renderRouter(); renderLog(); syncSheetState();
+  renderPresets(); renderSignals(); renderRouter(); renderLog(); renderAttachments(); syncSheetState();
 }
 
 function renderPresets() {
@@ -925,9 +1012,20 @@ function closeSideSheet() {
   sideSheetEl.close();
   syncSheetState();
 }
+function renderAttachments() {
+  const row = $('#attachRow');
+  row.dataset.attachments = String(STATE.attachments.length);
+  row.dataset.attachmentChars = String(STATE.attachments.reduce((n, a) => n + a.chars, 0));
+  attachmentsEl.innerHTML = STATE.attachments.map((a, i) => `<li class="attachment" data-attachment="${esc(a.name)}" data-kind="${a.kind}" data-truncated="${a.truncated}">
+    <span class="name" title="${esc(a.name)}">${esc(a.name)}</span>
+    <span class="meta">${a.chars}${a.truncated ? ' · ' + esc(t('attachTruncated')) : ''}</span>
+    <button type="button" class="remove" data-remove="${i}" aria-label="${esc(t('attachRemove'))}: ${esc(a.name)}">×</button>
+  </li>`).join('');
+  $('#btnAttach').disabled = STATE.attachments.length >= MAX_ATTACHMENTS;
+}
 function invalidateDecision() {
   STATE.requestId++; STATE.answers = {}; STATE.decision = null; STATE.lastRequest = null; STATE.lastResponse = null;
-  setPhase('idle', ''); renderSignals(); renderRouter(); renderRaw();
+  setPhase('idle', ''); renderSignals(); renderRouter(); renderRaw(); renderAttachments();
 }
 
 
@@ -947,7 +1045,7 @@ function renderResponse() {
 function renderLog() {
   logEl.innerHTML = STATE.log.map((row) => `<tr data-target="${row.target}">
     <td class="mono">${row.time}</td>
-    <td class="prompt-cell" title="${esc(row.prompt)}">${esc(row.prompt)}</td>
+    <td class="prompt-cell" title="${esc(row.prompt)}">${row.attachments ? '📎' + row.attachments + ' ' : ''}${esc(row.prompt)}</td>
     <td><span class="chip ${row.target === 'local' ? 'green' : ''}">${t(row.target)}</span></td>
     <td>${esc(row.fired.join(', ') || '–')}</td>
     <td class="mono">${row.tokens}</td>
@@ -992,10 +1090,11 @@ async function route(opts) {
   const fresh = !!(opts && opts.fresh);
   const requestId = ++STATE.requestId;
   let prompt = promptEl.value.trim();
-  if (!prompt || (fresh && prompt === STATE.autoPrompt)) { prompt = pickAnyQuestion(); promptEl.value = prompt; STATE.autoPrompt = prompt; }
-  if (!prompt) { invalidateDecision(); setPhase('idle', t('emptyPrompt')); promptEl.focus(); return; }
+  const hasAttachments = STATE.attachments.length > 0;
+  if (!hasAttachments && (!prompt || (fresh && prompt === STATE.autoPrompt))) { prompt = pickAnyQuestion(); promptEl.value = prompt; STATE.autoPrompt = prompt; }
+  if (!prompt && !hasAttachments) { invalidateDecision(); setPhase('idle', t('emptyPrompt')); promptEl.focus(); return; }
   STATE.answers = {}; STATE.decision = null;
-  STATE.lastRequest = buildRequest(prompt, STATE.signals); STATE.lastResponse = null;
+  STATE.lastRequest = buildRequest(prompt, STATE.signals, STATE.attachments); STATE.lastResponse = null;
   setPhase('asking', t('asking'));
   renderSignals(); renderRouter(); renderRaw();
   try {
@@ -1005,7 +1104,7 @@ async function route(opts) {
     STATE.answers = res.answers || {};
     STATE.decision = decide(STATE.signals, STATE.answers, STATE.thresholds);
     const fired = STATE.signals.filter((s) => s.enabled && signalState(s, STATE.answers[s.id], STATE.thresholds) === 'fire').map(nameOf);
-    STATE.log.unshift({ time: new Date().toLocaleTimeString(), prompt, target: STATE.decision.target, fired, tokens: res.usage ? res.usage.input_tokens : 0 });
+    STATE.log.unshift({ time: new Date().toLocaleTimeString(), prompt: prompt || STATE.attachments.map((a) => a.name).join(', '), attachments: STATE.attachments.length, target: STATE.decision.target, fired, tokens: res.usage ? res.usage.input_tokens : 0 });
     setPhase('decided', t(STATE.decision.target === 'local' ? 'decidedLocal' : 'decidedFrontier'));
   } catch (err) {
     if (requestId !== STATE.requestId) return;
@@ -1134,6 +1233,15 @@ $('#btnResetSignals').addEventListener('click', () => { STATE.signals = structur
 $('#btnClearLog').addEventListener('click', () => { STATE.log = []; renderLog(); });
 
 promptEl.addEventListener('input', invalidateDecision);
+$('#btnAttach').addEventListener('click', () => attachInputEl.click());
+attachInputEl.addEventListener('change', async () => { await attachFiles(attachInputEl.files); attachInputEl.value = ''; });
+attachmentsEl.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-remove]'); if (!b) return;
+  removeAttachment(+b.dataset.remove); invalidateDecision();
+});
+for (const type of ['dragenter', 'dragover']) promptStageEl.addEventListener(type, (e) => { if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) { e.preventDefault(); promptStageEl.classList.add('is-dragover'); } });
+promptStageEl.addEventListener('dragleave', (e) => { if (!promptStageEl.contains(e.relatedTarget)) promptStageEl.classList.remove('is-dragover'); });
+promptStageEl.addEventListener('drop', (e) => { promptStageEl.classList.remove('is-dragover'); if (e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); attachFiles(e.dataTransfer.files); } });
 $('#btnTools').addEventListener('click', () => sideSheetEl.open ? closeSideSheet() : openSideSheet());
 document.querySelectorAll('[data-open-panel]').forEach((button) => button.addEventListener('click', () => openSideSheet(button.dataset.openPanel)));
 $('#btnCloseSheet').addEventListener('click', closeSideSheet);
@@ -1154,7 +1262,7 @@ STATE.thresholds = { ...DEFAULT_THRESHOLDS, ...loadJSON(LS.thresholds, {}) };
 renderMode(); applyI18n(); renderRaw(); setPhase('idle', '');
 loadQuestions();
 
-window.App = { STATE, T, t, decide, signalState, buildRequest, mockJev, route, redecide, validSignal, DEFAULT_SIGNALS, PRESETS, pickQuestion, pickAnyQuestion, parseQuestions, questionPool, DEFAULT_WORKER_URL, verify, openSideSheet, CONTRACT: { version: 2, stages: ['prompt', 'policy', 'jev', 'models'] } };
+window.App = { STATE, T, t, decide, signalState, buildRequest, composeState, makeAttachment, addAttachment, removeAttachment, attachmentKind, attachFiles, renderAttachments, ATTACHMENT_CHARS, MAX_ATTACHMENTS, mockJev, route, redecide, validSignal, DEFAULT_SIGNALS, PRESETS, pickQuestion, pickAnyQuestion, parseQuestions, questionPool, DEFAULT_WORKER_URL, verify, openSideSheet, CONTRACT: { version: 2, stages: ['prompt', 'policy', 'jev', 'models'] } };
 syncSheetLayout();
 promptEl.focus({ preventScroll: true });
 new ResizeObserver(drawConnections).observe(routerEl);
