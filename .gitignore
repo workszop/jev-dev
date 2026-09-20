@@ -1,0 +1,11 @@
+mockups/
+plans/
+superpowers/
+progress.md
+review*.md
+*.plan.md
+*.draft.*
+scratch/
+node_modules/
+.wrangler/
+.dev.vars
