@@ -166,14 +166,14 @@ main { flex:1; padding:var(--canvas-pad); }
 .text-action { background:transparent; border:0; padding:0; color:inherit; font-size:var(--stage-caption); text-align:var(--stage-align); text-decoration:underline; text-underline-offset:4px; cursor:pointer; }
 .text-action:disabled { opacity:.5; cursor:default; text-decoration:none; }
 .prompt-stage,.policy-stage { color:var(--paper); background:var(--ink); }
-.prompt-stage textarea { flex:1; width:100%; min-height:270px; padding:16px; margin:24px 0; border:0; border-radius:var(--r-sm); background:var(--paper); color:var(--ink); resize:none; font:inherit; font-size:var(--body); line-height:1.75; }
+.prompt-stage textarea { flex:1; width:100%; min-height:150px; padding:16px; margin:24px 0; border:0; border-radius:var(--r-sm); background:var(--paper); color:var(--ink); resize:none; font:inherit; font-size:var(--body); line-height:1.75; }
 .prompt-stage textarea::placeholder { color:var(--ink-2); opacity:1; }
 .prompt-stage textarea:focus-visible { outline:2px solid var(--yellow); outline-offset:4px; box-shadow:none; }
 .attach-row { display:flex; flex-direction:column; gap:8px; margin:-14px 0 16px; }
 .attachments { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
 .attachments:empty { display:none; }
 .attachment { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; max-width:100%; padding:7px 10px 8px 12px; border:1px solid var(--dark-line); border-radius:var(--r-sm); background:var(--paper); color:var(--ink); font-size:var(--stage-caption); line-height:1.3; }
-.attachment .excerpt { flex-basis:100%; margin:2px 0 0; color:var(--ink-2); font-size:var(--stage-caption); line-height:1.45; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.attachment .excerpt { flex-basis:100%; margin:2px 0 0; overflow-wrap:anywhere; color:var(--ink-2); font-size:var(--stage-caption); line-height:1.45; display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
 .attachment .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; font-weight:600; }
 .attachment .remove { margin-left:auto; }
 .attachment .meta { font-family:var(--font-mono); color:var(--ink-2); white-space:nowrap; }
@@ -300,7 +300,7 @@ body[data-phase="decided"] .response { display:block; }
   .edu-header-inner { gap:8px; } .edu-wordmark { font-size:var(--mobile-wordmark); } .header-title { display:none; }
   .edu-logo { width:38px; height:38px; }
   .router { display:grid; grid-template-columns:minmax(0,1fr); gap:36px; min-height:0; }
-  .flow-stage { padding:24px; } .prompt-stage { min-height:460px; } .prompt-stage textarea { min-height:200px; }
+  .flow-stage { padding:24px; } .prompt-stage { min-height:460px; } .prompt-stage textarea { min-height:140px; }
   .selection-stage { padding:0; } .model-targets { grid-template-columns:1fr 1fr; grid-template-rows:1fr; gap:12px; }
   .model-card { padding:18px; } .model-icon { width:26px; height:26px; } .model-card h3 { font-size:var(--mobile-model-title); } .model-card .overline { font-size:var(--mobile-model-overline); }
   .canvas-foot { gap:12px; } .canvas-foot span:last-child { max-width:none; text-align:var(--stage-align); }
@@ -454,7 +454,7 @@ body[data-phase="decided"] .response { display:block; }
 // ─── Constants ───
 const ATTACHMENT_CHARS = 3000; // one page of text per attachment
 const MAX_ATTACHMENTS = 3;
-const PREVIEW_CHARS = 220; // excerpt shown under an attachment chip
+const PREVIEW_CHARS = 440; // excerpt shown under an attachment chip
 const ATTACHMENT_KINDS = { txt: 'txt', md: 'md', csv: 'csv', pdf: 'pdf' };
 const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
