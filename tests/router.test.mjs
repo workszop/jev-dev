@@ -460,3 +460,52 @@ test('DOM contract: route button has no visible label, only an accessible name',
   const routeSpan = HTML.match(/<button class="btn primary route-btn" id="btnRoute"[^>]*>[\s\S]*?<\/button>/)[0];
   assert.equal(/<span data-t="route">/.test(routeSpan), false);
 });
+
+// ─── Attachment reading (review fixes) ───
+
+function fakeFile(name, content, size = content.length) {
+  const calls = [];
+  return {
+    name, size, calls,
+    async text() { calls.push(['text']); return content; },
+    slice(start, end) { calls.push(['slice', start, end]); return { async text() { return content.slice(start, end); } }; },
+  };
+}
+
+test('attachFiles refuses to run while a route is in flight', async () => {
+  App.STATE.attachments = [];
+  App.STATE.phase = 'asking';
+  const message = await App.attachFiles([fakeFile('a.txt', 'hello')]);
+  assert.equal(App.STATE.attachments.length, 0);
+  assert.ok(message && message.length > 0, 'should return a message');
+  App.STATE.phase = 'idle';
+  App.STATE.attachments = [];
+});
+
+test('text files are read as a bounded prefix, not whole', async () => {
+  App.STATE.attachments = [];
+  const big = fakeFile('big.csv', 'x'.repeat(50000), 50000);
+  await App.attachFiles([big]);
+  assert.equal(big.calls.some((c) => c[0] === 'text'), false, 'must not call file.text()');
+  const slice = big.calls.find((c) => c[0] === 'slice');
+  assert.ok(slice && slice[2] <= App.ATTACHMENT_CHARS * 4, String(slice));
+  assert.equal(App.STATE.attachments[0].truncated, true);
+  assert.equal(App.STATE.attachments[0].chars, App.ATTACHMENT_CHARS);
+  App.STATE.attachments = [];
+});
+
+test('a short file read through the prefix is not marked truncated', async () => {
+  App.STATE.attachments = [];
+  await App.attachFiles([fakeFile('note.md', 'short text')]);
+  assert.equal(App.STATE.attachments[0].truncated, false);
+  App.STATE.attachments = [];
+});
+
+test('attachFiles reports every failed file, not only the last', async () => {
+  App.STATE.attachments = [];
+  const message = await App.attachFiles([fakeFile('a.docx', 'x'), fakeFile('ok.txt', 'fine'), fakeFile('b.xlsx', 'y')]);
+  assert.match(message, /a\.docx/);
+  assert.match(message, /b\.xlsx/);
+  assert.equal(App.STATE.attachments.length, 1);
+  App.STATE.attachments = [];
+});

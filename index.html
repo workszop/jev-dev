@@ -527,7 +527,7 @@ const T = {
     namePl: 'Nazwa (PL)', nameEn: 'Nazwa (EN)', type: 'Typ', policy: 'Polityka', pLockLocal: 'Blokada: lokalnie', pLockFrontier: 'Blokada: frontier', pSoftFrontier: 'Głos: frontier', pSoftLocal: 'Głos: lokalnie',
     instructions: 'Pytanie (EN, instructions)', instrHint: 'Jev działa najlepiej po angielsku. Odnoś się do stanu jako "the prompt".', critTrue: 'Co znaczy TAK', critFalse: 'Co znaczy NIE', critLevels: 'Poziomy (jeden na linię, od najniższego)', cancel: 'Anuluj', save: 'Zapisz',
     stFire: 'aktywny', stClear: 'czysty', stUncertain: 'niepewny', stIdle: 'czeka', local: 'lokalnie', frontier: 'frontier',
-    attach: 'Dołącz plik', attachHint: '(txt, md, csv, pdf · 1 strona)', attachRemove: 'Usuń załącznik', attachTruncated: 'przycięto do 1 strony', attachUnsupported: 'Nieobsługiwany typ pliku: {name}', attachTooMany: 'Maksymalnie {n} załączniki.', attachReadError: 'Nie udało się odczytać: {name}', attachEmpty: 'Plik nie zawiera tekstu: {name}', attachReading: 'Czytam załącznik...',
+    attach: 'Dołącz plik', attachHint: '(txt, md, csv, pdf · 1 strona)', attachRemove: 'Usuń załącznik', attachTruncated: 'przycięto do 1 strony', attachUnsupported: 'Nieobsługiwany typ pliku: {name}', attachTooMany: 'Maksymalnie {n} załączniki.', attachReadError: 'Nie udało się odczytać: {name}', attachEmpty: 'Plik nie zawiera tekstu: {name}', attachReading: 'Czytam załącznik...', attachBusy: 'Poczekaj na decyzję, zanim dodasz załącznik.',
     emptyPrompt: 'Wpisz prompt.', asking: 'Jev ocenia sygnały...', decidedLocal: 'Decyzja: mały model lokalny.', decidedFrontier: 'Decyzja: model frontier.', errorPrefix: 'Błąd: ',
     questions: 'pytań', tokens: 'tok', respLocal: 'Odpowiedź z lokalnego modelu', respFrontier: 'Odpowiedź z modelu frontier',
     tagPrivate: 'dane zostają w firmie', tagExternal: 'dane opuszczają firmę', tagCheap: 'koszt ~0', tagPaid: 'koszt płatny', tagFast: 'niska latencja', tagSlow: 'wyższa latencja',
@@ -556,7 +556,7 @@ const T = {
     namePl: 'Name (PL)', nameEn: 'Name (EN)', type: 'Type', policy: 'Policy', pLockLocal: 'Lock: local', pLockFrontier: 'Lock: frontier', pSoftFrontier: 'Vote: frontier', pSoftLocal: 'Vote: local',
     instructions: 'Question (EN, instructions)', instrHint: 'Jev is strongest in English. Refer to the state as "the prompt".', critTrue: 'What YES means', critFalse: 'What NO means', critLevels: 'Levels (one per line, lowest first)', cancel: 'Cancel', save: 'Save',
     stFire: 'fired', stClear: 'clear', stUncertain: 'uncertain', stIdle: 'idle', local: 'local', frontier: 'frontier',
-    attach: 'Attach file', attachHint: '(txt, md, csv, pdf · 1 page)', attachRemove: 'Remove attachment', attachTruncated: 'clipped to 1 page', attachUnsupported: 'Unsupported file type: {name}', attachTooMany: 'At most {n} attachments.', attachReadError: 'Could not read: {name}', attachEmpty: 'No text found in: {name}', attachReading: 'Reading attachment...',
+    attach: 'Attach file', attachHint: '(txt, md, csv, pdf · 1 page)', attachRemove: 'Remove attachment', attachTruncated: 'clipped to 1 page', attachUnsupported: 'Unsupported file type: {name}', attachTooMany: 'At most {n} attachments.', attachReadError: 'Could not read: {name}', attachEmpty: 'No text found in: {name}', attachReading: 'Reading attachment...', attachBusy: 'Wait for the decision before adding an attachment.',
     emptyPrompt: 'Type a prompt first.', asking: 'Jev is evaluating the signals...', decidedLocal: 'Decision: local small model.', decidedFrontier: 'Decision: frontier model.', errorPrefix: 'Error: ',
     questions: 'questions', tokens: 'tok', respLocal: 'Response from the local model', respFrontier: 'Response from the frontier model',
     tagPrivate: 'data stays in-house', tagExternal: 'data leaves the company', tagCheap: 'cost ~0', tagPaid: 'paid tokens', tagFast: 'low latency', tagSlow: 'higher latency',
@@ -695,42 +695,45 @@ async function askJev(request) {
 // ─── Helpers: attachment reading ───
 let pdfjsPromise = null;
 async function loadPdfjs() {
-  if (!pdfjsPromise) pdfjsPromise = import(PDFJS_URL).then((mod) => { mod.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL; return mod; });
+  if (!pdfjsPromise) pdfjsPromise = import(PDFJS_URL).then((mod) => { mod.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL; return mod; }).catch((err) => { pdfjsPromise = null; throw err; });
   return pdfjsPromise;
 }
 async function extractPdfText(file) {
   const pdfjs = await loadPdfjs();
   const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
   const pages = [];
-  for (let i = 1; i <= doc.numPages; i++) {
+  try { for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
     let line = '', out = '';
     for (const item of content.items) { line += item.str; if (item.hasEOL) { out += line + '\n'; line = ''; } else if (item.str && !item.str.endsWith(' ')) line += ' '; }
     pages.push((out + line).trim());
     if (pages.join('\n').length > ATTACHMENT_CHARS) break; // one page of text is enough
-  }
+  } } finally { await doc.destroy(); }
   return pages.join('\n\n');
 }
 async function readAttachmentFile(file) {
   const kind = attachmentKind(file.name);
   if (!kind) throw Object.assign(new Error('unsupported'), { code: 'attachUnsupported' });
-  const text = kind === 'pdf' ? await extractPdfText(file) : await file.text();
+  const text = kind === 'pdf' ? await extractPdfText(file) : await file.slice(0, ATTACHMENT_CHARS * 4).text(); // UTF-8 worst case, never the whole file
   if (!text.trim()) throw Object.assign(new Error('empty'), { code: 'attachEmpty' });
   return makeAttachment({ name: file.name, text, kind });
 }
 async function attachFiles(files) {
   const list = Array.from(files || []);
-  if (!list.length) return;
+  if (!list.length) return '';
+  if (STATE.phase === 'asking') { setPhase('asking', t('attachBusy')); return t('attachBusy'); }
   setPhase('idle', t('attachReading'));
-  let message = '';
+  const messages = [];
   for (const file of list) {
-    if (STATE.attachments.length >= MAX_ATTACHMENTS) { message = t('attachTooMany').replace('{n}', MAX_ATTACHMENTS); break; }
+    if (STATE.attachments.length >= MAX_ATTACHMENTS) { messages.push(t('attachTooMany').replace('{n}', MAX_ATTACHMENTS)); break; }
     try { addAttachment(await readAttachmentFile(file)); }
-    catch (err) { message = t(err.code || 'attachReadError').replace('{name}', file.name); }
+    catch (err) { messages.push(t(err.code || 'attachReadError').replace('{name}', file.name)); }
   }
+  const message = messages.join(' ');
   invalidateDecision();
   setPhase('idle', message);
+  return message;
 }
 
 // ─── Helpers: mock Jev (keyword heuristics, same response shape) ───
