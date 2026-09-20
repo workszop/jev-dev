@@ -332,9 +332,9 @@ try {
 
   check('PL language at start', await page.getAttribute('html', 'lang') === 'pl');
   await page.click('[data-lang-btn="en"]');
-  check('EN toggle', (await page.textContent('#btnRoute')).includes('Route') && await page.getAttribute('html', 'lang') === 'en');
+  check('EN toggle', (await page.getAttribute('#btnRoute', 'aria-label')) === 'Route' && await page.getAttribute('html', 'lang') === 'en');
   await page.click('[data-lang-btn="pl"]');
-  check('PL toggle', (await page.textContent('#btnRoute')).includes('Routuj') && await page.getAttribute('html', 'lang') === 'pl');
+  check('PL toggle', (await page.getAttribute('#btnRoute', 'aria-label')) === 'Routuj' && await page.getAttribute('html', 'lang') === 'pl');
 
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, fullPage: true });
 } catch (error) {

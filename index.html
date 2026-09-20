@@ -170,10 +170,12 @@ main { flex:1; padding:var(--canvas-pad); }
 .prompt-stage textarea::placeholder { color:var(--ink-2); opacity:1; }
 .prompt-stage textarea:focus-visible { outline:2px solid var(--yellow); outline-offset:4px; box-shadow:none; }
 .attach-row { display:flex; flex-direction:column; gap:8px; margin:-14px 0 16px; }
-.attachments { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+.attachments { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
 .attachments:empty { display:none; }
-.attachment { display:inline-flex; align-items:center; gap:8px; max-width:100%; padding:5px 8px 5px 10px; border:1px solid var(--dark-line); border-radius:var(--r-pill); background:var(--paper); color:var(--ink); font-size:var(--stage-caption); line-height:1.3; }
-.attachment .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
+.attachment { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; max-width:100%; padding:7px 10px 8px 12px; border:1px solid var(--dark-line); border-radius:var(--r-sm); background:var(--paper); color:var(--ink); font-size:var(--stage-caption); line-height:1.3; }
+.attachment .excerpt { flex-basis:100%; margin:2px 0 0; color:var(--ink-2); font-size:var(--stage-caption); line-height:1.45; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.attachment .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; font-weight:600; }
+.attachment .remove { margin-left:auto; }
 .attachment .meta { font-family:var(--font-mono); color:var(--ink-2); white-space:nowrap; }
 .attachment[data-truncated="true"] .meta { color:var(--red); }
 .attachment .remove { border:0; background:transparent; color:inherit; padding:0 2px; cursor:pointer; font-size:16px; line-height:1; }
@@ -183,6 +185,8 @@ main { flex:1; padding:var(--canvas-pad); }
 .prompt-stage.is-dragover textarea { outline:2px dashed var(--yellow); outline-offset:4px; }
 .route-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .route-row .primary { box-shadow:none; margin-right:auto; }
+.route-btn { width:56px; height:48px; padding:0; justify-content:center; }
+.route-btn svg { width:26px; height:26px; }
 .shortcut { white-space:nowrap; }
 .prompt-stage kbd { background:var(--dark-line); color:var(--editor-muted); }
 .status-line { color:var(--editor-muted); font-size:var(--stage-caption); min-height:38px; margin-top:15px; line-height:1.5; }
@@ -333,7 +337,7 @@ body[data-phase="decided"] .response { display:block; }
         <button class="text-action attach-btn" type="button" id="btnAttach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8.5-8.5a3.5 3.5 0 0 1 5 5L10.5 18a2 2 0 0 1-3-3l8-8"/></svg><span data-t="attach">Dołącz plik</span> <span class="attach-hint" data-t="attachHint">(txt, md, csv, pdf · 1 strona)</span></button>
         <input type="file" id="attachInput" class="hidden" accept=".txt,.md,.csv,.pdf" multiple>
       </div>
-      <div class="route-row"><button class="btn primary" id="btnRoute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-t="route">Routuj</span></button><span class="shortcut"><kbd>Ctrl</kbd> <kbd>Enter</kbd></span></div>
+      <div class="route-row"><button class="btn primary route-btn" id="btnRoute" data-t-aria-label="route" aria-label="Routuj" title="Routuj" data-t-title="route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><span class="shortcut"><kbd>Ctrl</kbd> <kbd>Enter</kbd></span></div>
       <span class="status-line" id="status" role="status" aria-live="polite"></span>
       <div class="progress" aria-hidden="true"><i></i></div>
       <button class="text-action" type="button" data-open-panel="examples" data-t="tryExample">Wypróbuj przykład</button>
@@ -450,6 +454,7 @@ body[data-phase="decided"] .response { display:block; }
 // ─── Constants ───
 const ATTACHMENT_CHARS = 3000; // one page of text per attachment
 const MAX_ATTACHMENTS = 3;
+const PREVIEW_CHARS = 220; // excerpt shown under an attachment chip
 const ATTACHMENT_KINDS = { txt: 'txt', md: 'md', csv: 'csv', pdf: 'pdf' };
 const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
@@ -652,6 +657,14 @@ function addAttachment(spec) {
   STATE.attachments.push(spec && spec.chars !== undefined && spec.truncated !== undefined ? spec : makeAttachment(spec));
   return true;
 }
+function attachmentPreview(text, max = PREVIEW_CHARS) {
+  const flat = String(text || '').replace(/\s+/g, ' ').trim();
+  if (flat.length <= max) return flat;
+  let cut = flat.slice(0, max);
+  const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  if (stop > max * 0.4) cut = cut.slice(0, stop + 1); else { const sp = cut.lastIndexOf(' '); if (sp > 0) cut = cut.slice(0, sp); }
+  return cut.trimEnd() + '…';
+}
 function removeAttachment(index) { STATE.attachments.splice(index, 1); }
 function composeState(prompt, attachments) {
   if (!attachments || !attachments.length) return prompt;
@@ -827,6 +840,7 @@ function applyI18n() {
   document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); });
   document.querySelectorAll('[data-t-placeholder]').forEach((el) => { el.placeholder = t(el.dataset.tPlaceholder); });
   document.querySelectorAll('[data-t-title]').forEach((el) => { el.title = t(el.dataset.tTitle); });
+  document.querySelectorAll('[data-t-aria-label]').forEach((el) => { el.setAttribute('aria-label', t(el.dataset.tAriaLabel)); });
   document.querySelectorAll('[data-lang-btn]').forEach((b) => b.classList.toggle('active', b.dataset.langBtn === STATE.lang));
   renderPresets(); renderSignals(); renderRouter(); renderLog(); renderAttachments(); syncSheetState();
 }
@@ -1020,6 +1034,7 @@ function renderAttachments() {
     <span class="name" title="${esc(a.name)}">${esc(a.name)}</span>
     <span class="meta">${a.chars}${a.truncated ? ' · ' + esc(t('attachTruncated')) : ''}</span>
     <button type="button" class="remove" data-remove="${i}" aria-label="${esc(t('attachRemove'))}: ${esc(a.name)}">×</button>
+    <p class="excerpt">${esc(attachmentPreview(a.text))}</p>
   </li>`).join('');
   $('#btnAttach').disabled = STATE.attachments.length >= MAX_ATTACHMENTS;
 }
@@ -1262,7 +1277,7 @@ STATE.thresholds = { ...DEFAULT_THRESHOLDS, ...loadJSON(LS.thresholds, {}) };
 renderMode(); applyI18n(); renderRaw(); setPhase('idle', '');
 loadQuestions();
 
-window.App = { STATE, T, t, decide, signalState, buildRequest, composeState, makeAttachment, addAttachment, removeAttachment, attachmentKind, attachFiles, renderAttachments, ATTACHMENT_CHARS, MAX_ATTACHMENTS, mockJev, route, redecide, validSignal, DEFAULT_SIGNALS, PRESETS, pickQuestion, pickAnyQuestion, parseQuestions, questionPool, DEFAULT_WORKER_URL, verify, openSideSheet, CONTRACT: { version: 2, stages: ['prompt', 'policy', 'jev', 'models'] } };
+window.App = { STATE, T, t, decide, signalState, buildRequest, composeState, makeAttachment, addAttachment, removeAttachment, attachmentKind, attachmentPreview, attachFiles, renderAttachments, ATTACHMENT_CHARS, MAX_ATTACHMENTS, PREVIEW_CHARS, mockJev, route, redecide, validSignal, DEFAULT_SIGNALS, PRESETS, pickQuestion, pickAnyQuestion, parseQuestions, questionPool, DEFAULT_WORKER_URL, verify, openSideSheet, CONTRACT: { version: 2, stages: ['prompt', 'policy', 'jev', 'models'] } };
 syncSheetLayout();
 promptEl.focus({ preventScroll: true });
 new ResizeObserver(drawConnections).observe(routerEl);
