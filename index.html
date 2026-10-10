@@ -13,8 +13,8 @@
   --font-display: 'Outfit', 'IBM Plex Sans', system-ui, sans-serif;
   --font-sans:    'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-mono:    'Roboto Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --paper: #FFFFFF; --paper-2: #FBF7E6; --paper-3: #F5EDCB; --surface: #FFFFFF;
-  --ink: #1C1917; --ink-2: #57534E; --ink-3: #716961; --line: #EDE7D2; --line-2: #DDD4B6;
+  --paper: #FFFFFF; --paper-2: #F5F3F0; --paper-3: #EAE6E0; --surface: #FFFFFF;
+  --ink: #1C1917; --ink-2: #44403C; --ink-3: #625B53; --line: #E0DBD3; --line-2: #C9C2B7; --line-strong: #857C69; /* control borders >= 3:1 */ --track: color-mix(in srgb, var(--ink) 24%, transparent);
   --yellow: #FFD500; --yellow-600: #F0C800; --yellow-soft: #FFD500; --yellow-ink: #1C1917;
   --blue: #1E8FC2; --blue-600: #177AA8; --blue-soft: #177AA8; --blue-ink: #FFFFFF;
   --green: #00A651; --green-600: #078342; --green-soft: #078342; --green-ink: #FFFFFF;
@@ -27,8 +27,8 @@
   --dark-muted: rgba(255,255,255,.55);
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
   --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
-  --shadow-sm: 0 1px 2px rgba(33,30,26,.06), 0 1px 1px rgba(33,30,26,.04);
-  --shadow-md: 0 4px 16px rgba(33,30,26,.08), 0 1px 3px rgba(33,30,26,.05);
+  --shadow-sm: 0 1px 2px rgba(33,30,26,.10), 0 2px 6px rgba(33,30,26,.06);
+  --shadow-md: 0 6px 18px rgba(33,30,26,.12), 0 1px 3px rgba(33,30,26,.08);
   --shadow-lg: 0 16px 40px rgba(33,30,26,.12), 0 3px 8px rgba(33,30,26,.06);
   --shadow-primary: 0 8px 22px color-mix(in srgb, var(--yellow) 30%, transparent);
   --body: 15px; --body-sm: 13.5px; --caption: 12.5px; --overline: 11px;
@@ -124,7 +124,7 @@ dialog::backdrop { background: rgba(28,25,23,.45); }
 .dlg h2 { font-size: 20px; }
 .field { display: grid; gap: 5px; }
 .field label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-2); }
-.field input[type="text"], .field input[type="url"], .field select, .field textarea { font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--paper); color: var(--ink); width: 100%; min-height: 0; }
+.field input[type="text"], .field input[type="url"], .field select, .field textarea { font: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--paper); color: var(--ink); width: 100%; min-height: 0; }
 .field textarea { min-height: 70px; }
 .field .hint { font-size: 12px; color: var(--ink-3); }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
